@@ -1,0 +1,18 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "shell",
+      "label": "run flask",
+      "command": "python ./src/server/MtMain.py",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Open DB",
+      "command": "${command:sqlite.explorer.add}"
+    }
+  ]
+}
