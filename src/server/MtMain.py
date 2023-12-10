@@ -51,15 +51,10 @@ class Main:
 			# Flask
 			# def start_flask():
 
-			hostname = "0.0.0.0"
-			if len(sys.argv) > 1:
-				if sys.argv[1] == "open":
-					hostname = self.core.getHost()
-
 			mt.app.run(
 				debug = MtConfig.debug,
 				port = MtConfig.app_port,
-				host = hostname, #"127.0.0.1",
+				host = MtConfig.hostname,
 				# ssl_context = ('./res/SSL/local.crt', './res/SSL/local.key')
 			)
 			# self.threadFlask = threading.Thread(target=start_flask, daemon=True)
