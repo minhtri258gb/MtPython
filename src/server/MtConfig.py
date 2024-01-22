@@ -1,6 +1,6 @@
 
 # Develop
-debug = True
+debug = False
 
 # System
 hostname = "0.0.0.0"

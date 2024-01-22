@@ -6,6 +6,14 @@
       "label": "run flask",
       "command": "python ./src/server/MtMain.py",
       "group": {
+        "kind": "build"
+      }
+    },
+    {
+      "type": "shell",
+      "label": "run fast api",
+      "command": "python ./src/server2/main.py",
+      "group": {
         "kind": "build",
         "isDefault": true
       }
