@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "run flask",
+      "type": "python",
+      "request": "launch",
+      "program": "src/server/MtMain.py",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }, 
+    {
+      "name": "run fast API",
+      "type": "python",
+      "request": "launch",
+      "program": "src/server2/main.py",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ]
+}

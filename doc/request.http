@@ -1,0 +1,8 @@
+POST http://localhost/graphql
+Content-Type: application/json
+# Authorization: Bearer xxx
+X-REQUEST-TYPE: GraphQL
+
+query MyQuery {
+  hello ## Placeholder value
+}
