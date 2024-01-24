@@ -1,6 +1,6 @@
 import sqlite3
 from flask import request, jsonify
-import MtUtils
+import MtSystem
 
 class MtApi:
 
@@ -20,7 +20,7 @@ class MtApi:
 
 		# Query
 		conn = sqlite3.connect(self.dbPath)
-		conn.row_factory = MtUtils.cbk_dict_factory
+		conn.row_factory = MtSystem.cbk_dict_factory
 		cursor = conn.execute("SELECT * FROM api")
 		listAPI = cursor.fetchall()
 		conn.close()

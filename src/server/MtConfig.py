@@ -11,8 +11,8 @@ tmp_path = './res/tmp/'
 # Application
 list_app = [
   'music', 'piano', 'midi', 'manager',
-  'api', 'image', 'request',
-  'code', 'OCR', 'QR', 'sheet', 'soundHandler', "map",
+  'api', 'image', 'request', 'image',
+  'test', 'code', 'OCR', 'QR', 'sheet', 'soundHandler', "map",
   '3D', 'calendar', 'contact', 'engine', 'game', 'jigsaw', 'play', 'traitim'
 ]
 
