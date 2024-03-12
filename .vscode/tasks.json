@@ -2,16 +2,16 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "1. start (flask)",
       "type": "shell",
-      "label": "run flask",
       "command": "python ./src/server/MtMain.py",
       "group": {
         "kind": "build"
       }
     },
     {
+      "label": "2. start (fast)",
       "type": "shell",
-      "label": "run fast api",
       "command": "python ./src/server2/main.py",
       "group": {
         "kind": "build",
