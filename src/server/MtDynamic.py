@@ -11,30 +11,47 @@ class MtDynamic:
 
 	def register(self):
 
-		@self.mt.app.route("/dynamic/list/<code>", methods=['POST'])
-		def api_dynamic_list(code):
-			return self.api_list(code)
+		@self.mt.app.route("/api/dynamic/list", methods=['POST'])
+		def api_dynamic_list():
+			return self.api_list()
 		
-		@self.mt.app.route("/dynamic/info/<code>", methods=['POST'])
-		def api_dynamic_info(code):
-			return self.api_info(code)
+		@self.mt.app.route("/api/dynamic/info", methods=['POST'])
+		def api_dynamic_info():
+			return self.api_info()
 
-	def api_list(self, code):
+	def api_list(self):
 
 		#TODO Check authenticate
 
+		args = request.get_json()
+
 		self.db.on()
-		headers, rows = self.db.getDynamicList(code)
+		try:
+			result = self.db.getDynamicList(args)
+			result_code = 200
+		except Exception as e:
+			result = str(e)
+			result_code = 500
 		self.db.off()
 
-		return jsonify({
-			"headers": headers,
-			"rows": rows
-		}), 200
+		return jsonify(result), result_code
 
-	def api_info(self, code):
-		print(code)
-		pass
+	def api_info(self):
+		
+		#TODO Check authenticate
+
+		args = request.get_json()
+		
+		self.db.on()
+		try:
+			result = self.db.getDynamicInfo(args)
+			result_code = 200
+		except Exception as e:
+			result = str(e)
+			result_code = 500
+		self.db.off()
+
+		return jsonify(result), result_code
 
 
 class MtDynamicDB:
@@ -60,29 +77,108 @@ class MtDynamicDB:
 			d[col[0]] = row[idx]
 		return d
 	
-	def getDynamicList(self, code):
+	def query(self, sql, params):
+		return self.conn.execute(sql, params).fetchall()
+	
+	def getDynamicList(self, args):
 		
 		self.conn.row_factory = MtDynamicDB.cbk_dict_factory
 
+		pageCode = args["page"]
+
+		# Detail List
+		sql = """
+			SELECT id, code, name, query FROM list WHERE code = ?
+		"""
+		params = [pageCode]
+		details = self.query(sql, params)
+		if len(details) == 0:
+			raise Exception("Không tìm thấy trang")
+		detail = details[0]
+		listId = detail['id']
+
 		# Header
 		sql = """
-			SELECT LOWER(lc.code) key, lc.name value
-			FROM list l
-			LEFT JOIN list_col lc ON lc.list_id = l.id
-			WHERE l.code = ?
-			ORDER BY lc.seq
+			SELECT LOWER(code) key, name value
+			FROM list_col
+			WHERE list_id = ?
+			ORDER BY seq
 		"""
-		param = [code]
-		headers = self.conn.execute(sql, param).fetchall()
+		params = [listId]
+		headers = self.query(sql, params)
 
 		# Rows
+		sql = detail['query']
+		print(sql)
+		# while True:
+		# 	posb = sql.index('{')
+		# 	print(posb)
+		# 	if posb == -1:
+		# 		break
+		# 	pose = sql.index('}')
+		# 	print(pose)
+		# 	if pose == -1:
+		# 		raise Exception("Cấu hình lỗi: Dấu { và } ko cùng số lượng: " + detail['query'])
+		# 	print(posb, pose)
+		# 	varName = sql.substring(posb+1, pose)
+		# 	if len(varName) == 0:
+		# 		raise Exception("Cấu hình lỗi: Ko có tên biến giữa { và } : " + detail['query'])
+		# 	if args[varName] == null:
+		# 		raise Exception("Cấu hình lỗi: Ko tìm thấy biến trong yêu cầu:" + varName)
+		# 	sql = sql.replace("{"+varName+"}", args[varName])
+		params = []
+		rows = self.query(sql, params)
+
+		# Actions
 		sql = """
-			SELECT id, code, name
-			FROM list
+			SELECT code, name, type, func_type, func_data
+			FROM action
+			WHERE page_type = 'LIST'
+				AND page_id = ?
 		"""
-		param = []
-		rows = self.conn.execute(sql, param).fetchall()
+		params = [listId]
+		actions = self.query(sql, params)
 
 		# Return
-		return headers, rows
+		return {
+			"detail": detail,
+			"headers": headers,
+			"rows": rows,
+			"actions": actions
+		}
+
+	def getDynamicInfo(self, args):
+		
+		self.conn.row_factory = MtDynamicDB.cbk_dict_factory
+
+		# Detail Info
+		sql = """
+			SELECT id, code, name FROM info WHERE code = ?
+		"""
+		params = [pageCode]
+		details = self.query(sql, params)
+		if len(details) == 0:
+			raise Exception("Không tìm thấy trang")
+		detail = details[0]
+		infoId = detail['id']
+
+		# TODO
+
+		# Actions
+		sql = """
+			SELECT code, name, type, func_type, func_data
+			FROM action
+			WHERE page_type = 'INFO'
+				AND page_id = ?
+		"""
+		params = [infoId]
+		actions = self.query(sql, params)
+
+		# Return
+		return {
+			"detail": detail,
+			# "headers": headers,
+			# "rows": rows,
+			"actions": actions
+		}
 
