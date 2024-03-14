@@ -8,7 +8,7 @@ CREATE TABLE list_col (
 );
 
 INSERT INTO list_col (code,name,list_id,seq)
-VALUES ('NAME','Tên cột',2,2);
+VALUES ('Code','Mã hành động',5,1), ('NAME','Tên hành động',5,2);
 
 INSERT INTO list_col (id,code,name,list_id,seq) VALUES
 	 (1,'CODE','Mã danh sách',1,1)

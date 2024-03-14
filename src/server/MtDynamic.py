@@ -30,6 +30,7 @@ class MtDynamic:
 			result = self.db.getDynamicList(args)
 			result_code = 200
 		except Exception as e:
+			print("[ERROR]", e)
 			result = str(e)
 			result_code = 500
 		self.db.off()
@@ -47,6 +48,7 @@ class MtDynamic:
 			result = self.db.getDynamicInfo(args)
 			result_code = 200
 		except Exception as e:
+			print("[ERROR]", e)
 			result = str(e)
 			result_code = 500
 		self.db.off()
@@ -96,6 +98,8 @@ class MtDynamicDB:
 			raise Exception("Không tìm thấy trang")
 		detail = details[0]
 		listId = detail['id']
+		query = detail['query']
+		del detail['query'] # Bỏ query vì bảo mật
 
 		# Header
 		sql = """
@@ -108,24 +112,21 @@ class MtDynamicDB:
 		headers = self.query(sql, params)
 
 		# Rows
-		sql = detail['query']
-		print(sql)
-		# while True:
-		# 	posb = sql.index('{')
-		# 	print(posb)
-		# 	if posb == -1:
-		# 		break
-		# 	pose = sql.index('}')
-		# 	print(pose)
-		# 	if pose == -1:
-		# 		raise Exception("Cấu hình lỗi: Dấu { và } ko cùng số lượng: " + detail['query'])
-		# 	print(posb, pose)
-		# 	varName = sql.substring(posb+1, pose)
-		# 	if len(varName) == 0:
-		# 		raise Exception("Cấu hình lỗi: Ko có tên biến giữa { và } : " + detail['query'])
-		# 	if args[varName] == null:
-		# 		raise Exception("Cấu hình lỗi: Ko tìm thấy biến trong yêu cầu:" + varName)
-		# 	sql = sql.replace("{"+varName+"}", args[varName])
+		sql = query
+		while True:
+			posb = sql.find('{')
+			if posb == -1:
+				break
+			pose = sql.find('}')
+			if pose == -1:
+				raise Exception("Cấu hình lỗi: Dấu { và } ko cùng số lượng: " + detail['query'])
+			
+			varName = sql[posb+1:pose]
+			if len(varName) == 0:
+				raise Exception("Cấu hình lỗi: Ko có tên biến giữa { và } : " + detail['query'])
+			if not varName in args:
+				raise Exception("Cấu hình lỗi: Ko tìm thấy biến trong yêu cầu:" + varName)
+			sql = sql.replace("{"+varName+"}", args[varName])
 		params = []
 		rows = self.query(sql, params)
 
@@ -150,6 +151,8 @@ class MtDynamicDB:
 	def getDynamicInfo(self, args):
 		
 		self.conn.row_factory = MtDynamicDB.cbk_dict_factory
+
+		pageCode = args["page"]
 
 		# Detail Info
 		sql = """
