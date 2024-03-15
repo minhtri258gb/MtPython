@@ -1,6 +1,7 @@
 import sqlite3
 from flask import request, jsonify
 import traceback
+import MtUtils
 
 class MtDynamic:
 	
@@ -35,7 +36,7 @@ class MtDynamic:
 			result = self.db.getDynamicList(args)
 			result_code = 200
 		except Exception as e:
-			print("[ERROR]", e)
+			traceback.print_exc()
 			result = str(e)
 			result_code = 500
 		self.db.off()
@@ -53,7 +54,7 @@ class MtDynamic:
 			result = self.db.getDynamicInfo(args)
 			result_code = 200
 		except Exception as e:
-			# traceback.print_exc()
+			traceback.print_exc()
 			result = str(e)
 			result_code = 500
 		self.db.off()
@@ -113,7 +114,6 @@ class MtDynamicDB:
 		self.conn.commit()
 	
 	def getDynamicList(self, args):
-		
 		self.conn.row_factory = MtDynamicDB.cbk_dict_factory
 
 		pageCode = args["page"]
@@ -167,6 +167,7 @@ class MtDynamicDB:
 			FROM action
 			WHERE page_type = 'LIST'
 				AND page_id = ?
+			ORDER BY seq
 		"""
 		params = [listId]
 		actions = self.query(sql, params)
@@ -189,7 +190,9 @@ class MtDynamicDB:
 		else:
 			id = None
 
-		# Detail Info
+		lstContentCode = [] # Danh sách content
+
+		# Detail
 		sql = """
 			SELECT id, code, name, i.'table', query
 			FROM info i
@@ -206,33 +209,45 @@ class MtDynamicDB:
 
 		# Field
 		sql = """
-			SELECT LOWER(code) code, name, type
+			SELECT LOWER(code) code, name, type, options
 			FROM info_field
 			WHERE info_id = ?
 			ORDER BY seq
 		"""
 		params = [infoId]
 		fields = self.query(sql, params)
+		for i, field in enumerate(fields):
+			# Process Options in field
+			options = field['options']
+			del field['options']
+			if options is not None:
+				options = MtUtils.process_struct_pair(options, 1)
+				options.update(field) # Đè field vào options tránh đè prop quan trọng
+				if 'content' in options: # Lưu danh sách content để load
+					lstContentCode.append(options['content'])
+				fields[i] = options # Cập nhật lại fields
 
 		# Form
 		if id is not None:
-			sql = query
-			params = []
-			while True:
-				posb = sql.find('{')
-				if posb == -1:
-					break
-				pose = sql.find('}')
-				if pose == -1:
-					raise Exception("Cấu hình lỗi: Dấu { và } ko cùng số lượng: " + detail['query'])
+			sql, params = MtUtils.fillVarSql(query, args, None, None)
+			# sql = query
+			# params = []
+
+			# while True:
+			# 	posb = sql.find('{')
+			# 	if posb == -1:
+			# 		break
+			# 	pose = sql.find('}')
+			# 	if pose == -1:
+			# 		raise Exception("Cấu hình lỗi: Dấu { và } ko cùng số lượng: " + detail['query'])
 				
-				varName = sql[posb+1:pose]
-				if len(varName) == 0:
-					raise Exception("Cấu hình lỗi: Ko có tên biến giữa { và } : " + detail['query'])
-				if not varName in args:
-					raise Exception("Cấu hình lỗi: Ko tìm thấy biến trong yêu cầu: " + varName + " trong query: " + query)
-				sql = sql.replace("{"+varName+"}", "?")
-				params.append(args[varName])
+			# 	varName = sql[posb+1:pose]
+			# 	if len(varName) == 0:
+			# 		raise Exception("Cấu hình lỗi: Ko có tên biến giữa { và } : " + detail['query'])
+			# 	if not varName in args:
+			# 		raise Exception("Cấu hình lỗi: Ko tìm thấy biến trong yêu cầu: " + varName + " trong query: " + query)
+			# 	sql = sql.replace("{"+varName+"}", "?")
+			# 	params.append(args[varName])
 			forms = self.query(sql, params)
 			if len(forms) > 0:
 				form = forms[0]
@@ -249,12 +264,17 @@ class MtDynamicDB:
 		params = [infoId]
 		actions = self.query(sql, params)
 
+		# Content
+		lstContentCode = list(dict.fromkeys(lstContentCode)) # Remove duplicate
+		contents, fields = self.getContent(lstContentCode, fields, form)
+
 		# Return
 		return {
 			"detail": detail,
 			"fields": fields,
 			"form": form,
-			"actions": actions
+			"actions": actions,
+			"contents": contents
 		}
 
 	def getDynamicInfoSave(self, args):
@@ -280,7 +300,7 @@ class MtDynamicDB:
 		for column in columns:
 			colName = column['name']
 			lstColStr += "," + colName
-			if column['notnull'] == 1 and type(args[colName]) is None:
+			if column['notnull'] == 1 and args[colName] is None:
 				raise Exception("Cột "+colName+" trong bảng "+tableName+" không được truyền NULL")
 
 		# Kiểm tra các cột của form có trong bảng không
@@ -339,4 +359,75 @@ class MtDynamicDB:
 			else:
 				return False
 
+	def getContent(self, lstContentCode, fields, form):
 
+		# Get content info
+		if len(lstContentCode) == 0:
+			return {}, fields
+		lstIdStr = ""
+		params = []
+		for contentCode in lstContentCode:
+			lstIdStr += ",?"
+			params.append(contentCode)
+		sql = """
+			SELECT code, c.'type', c.'data', dynamic
+			FROM content c
+			WHERE code IN ({0})
+		""".format(lstIdStr[1:])
+		lstContent = self.query(sql, params)
+
+		# Find reference field value
+		for content in lstContent:
+			if content['dynamic'] == 0:
+				continue
+			# Find field use content
+			lstFieldAffect = [i for i, f in enumerate(fields) if 'content' in f and f['content'] == content['code']]
+			letVar = MtUtils.removeDuplicate(MtUtils.findVar(content['data']))
+			for i, field in enumerate(fields):
+				if field['code'] in letVar:
+					if not 'affect' in fields[i]:
+						fields[i]['affect'] = []
+					lstAffectId = fields[i]['affect']
+					lstAffectId.extend(lstFieldAffect)
+					fields[i]['affect'] = MtUtils.removeDuplicate(lstAffectId)
+
+		# Get content data static
+		result = {}
+		for content in lstContent:
+			type = content['type']
+			data = content['data']
+			params = []
+			if content['dynamic'] == 1: # Nhập biến vào chuỗi
+				if type == 'SQL':
+					data, params = MtUtils.fillVarSql(data, form, fields, result)
+				else:
+					data = MtUtils.fillVar(data, form, fields, result)
+			if type == 'LIST':
+				datas = MtUtils.process_struct_list(content['data'], 2)
+			elif type == 'PAIR':
+				datas = MtUtils.process_struct_pair(content['data'], 2)
+			elif type == 'SQL':
+				datas = self.query(data, params)
+			result[content['code']] = datas
+
+		# Get content data dynamic
+		result = {}
+		for content in lstContent:
+			type = content['type']
+			data = content['data']
+			params = []
+			if content['dynamic'] == 1: # Nhập biến vào chuỗi
+				if type == 'SQL':
+					data, params = MtUtils.fillVarSql(data, form, fields, result)
+				else:
+					data = MtUtils.fillVar(data, form, fields, result)
+			if type == 'LIST':
+				datas = MtUtils.process_struct_list(content['data'], 2)
+			elif type == 'PAIR':
+				datas = MtUtils.process_struct_pair(content['data'], 2)
+			elif type == 'SQL':
+				datas = self.query(data, params)
+			result[content['code']] = datas
+
+		# Return contents and update fields
+		return result, fields

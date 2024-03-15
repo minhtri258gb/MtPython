@@ -8,7 +8,8 @@ CREATE TABLE info (
 	,query TEXT(1024) NOT NULL
 );
 
-INSERT INTO info (code,name,query) VALUES
-	 ('MGR_LIST','Chi tiết màn hình danh sách','SELECT id, code, name, query FROM list WHERE id = ?')
+INSERT INTO info ('code','name','query','table') VALUES
+	 ('MGR_LIST','Chi tiết màn hình danh sách','SELECT id, code, name, query FROM list WHERE id = ?','list')
+	,('MGR_ACTION','Chi tiết màn hình hành động','SELECT id, code, name, type, page_type, page_id, func_type, func_data, seq FROM action WHERE id = ?','action')
 ;
 

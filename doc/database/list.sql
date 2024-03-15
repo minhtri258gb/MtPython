@@ -18,6 +18,7 @@ INSERT INTO list (code,name,query) VALUES
 	,('MGR_INFO_FIELD','Quản lý trường chi tiết',"SELECT id, code, name FROM info_field WHERE info_id = {infoId}")
 	,('MGR_ACTION','Quản lý hành động','SELECT id, code, name FROM action WHERE page_type = ''{pageType}'' and page_id = {pageId};')
 	,('MGR_MENU','Quản lý menu','SELECT id, code, name FROM menu')
+	,('MGR_CONTENT','Quản lý nội dung','SELECT id, code, type, dynamic FROM content')
 ;
 
 UPDATE list SET query = 'SELECT id, code, name FROM action WHERE page_type = ''{pageType}'' and page_id = {pageId}' WHERE id = 5
