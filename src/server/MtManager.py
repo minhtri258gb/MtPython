@@ -1,5 +1,6 @@
 import sqlite3
 from flask import request, jsonify
+import MtSystem
 
 class MtManager:
 	
@@ -66,12 +67,6 @@ class MtManagerDB:
 			self.conn.close()
 			self.conn = None
 
-	def cbk_dict_factory(cursor, row):
-		d = {}
-		for idx, col in enumerate(cursor.description):
-			d[col[0]] = row[idx]
-		return d
-
 	def getList(self, table, filter):
 		sql = "SELECT * FROM " + table + " WHERE 1=1"
 		param = []
@@ -103,7 +98,7 @@ class MtManagerDB:
 			sql += " LIMIT " + str(rows) + " OFFSET " + str(offset)
 
 		# Main Query
-		self.conn.row_factory = MtManagerDB.cbk_dict_factory
+		self.conn.row_factory = MtSystem.sql_dict_factory
 		rows = self.conn.execute(sql, param).fetchall()
 		
 		# Get total if kpaging

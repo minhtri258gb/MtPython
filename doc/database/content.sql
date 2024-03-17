@@ -26,6 +26,10 @@ INSERT INTO 'content' ('code','type','data') VALUES
 	 ('PAGE_TYPE','LIST','LIST,INFO')
 	,('FIELD_TYPE','LIST','TEXT,TEXTAREA,NUMBER,CHECKBOX,SELECTBOX')
 	,('FUNC_TYPE','LIST','LINK,SUBMIT')
-	,('PAGE','SQL','SELECT id, name FROM list WHERE 'LIST' = {page_type} UNION ALL SELECT id, name FROM info WHERE 'INFO' = {page_type}')
+	,('CONTENT_TYPE','LIST','LIST,PAIR,JSON,SQL')
+	,('PARENT_MENU','SQL','SELECT id key, name value FROM menu WHERE id != {id}')
+	,('LIST','SQL','SELECT id key, name value FROM list')
+	,('INFO','SQL','SELECT id key, name value FROM info')
+	,('TAB','SQL','SELECT id key, name value FROM tab')
+	,('PAGE','SQL','SELECT id key, name value FROM list WHERE ''LIST'' = {page_type} UNION ALL SELECT id key, name value FROM info WHERE ''INFO'' = {page_type}')
 ;
-

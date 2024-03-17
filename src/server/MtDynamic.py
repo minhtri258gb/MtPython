@@ -1,6 +1,7 @@
 import sqlite3
 from flask import request, jsonify
 import traceback
+import MtSystem
 import MtUtils
 
 class MtDynamic:
@@ -13,55 +14,113 @@ class MtDynamic:
 
 	def register(self):
 
-		@self.mt.app.route("/api/dynamic/list", methods=['POST'])
-		def api_dynamic_list():
-			return self.api_list()
+		@self.mt.app.route("/api/dynamic/getMenu", methods=['POST'])
+		def _apigetMenu():
+			return self.apiGetMenu()
 		
-		@self.mt.app.route("/api/dynamic/info", methods=['POST'])
-		def api_dynamic_info():
-			return self.api_info()
+		@self.mt.app.route("/api/dynamic/getList", methods=['POST'])
+		def _apiGetList():
+			return self.apiGetList()
+		
+		@self.mt.app.route("/api/dynamic/getInfo", methods=['POST'])
+		def _apiGetInfo():
+			return self.apiGetInfo()
 
-		@self.mt.app.route("/api/dynamic/info/save", methods=['POST'])
-		def api_dynamic_info_save():
-			return self.api_info_save()
+		@self.mt.app.route("/api/dynamic/saveInfo", methods=['POST'])
+		def _apiSaveInfo():
+			return self.apiSaveInfo()
 
-	def api_list(self):
+		@self.mt.app.route("/api/dynamic/getTab", methods=['POST'])
+		def _apiGetTab():
+			return self.apiGetTab()
 
-		#TODO Check authenticate
-
-		args = request.get_json()
-
+	def apiGetMenu(self):
 		self.db.on()
+		self.db.returnType('LST_DIC')
 		try:
-			result = self.db.getDynamicList(args)
+			menus = self.db.getMenus()
+			result = { "menus": menus }
 			result_code = 200
 		except Exception as e:
 			traceback.print_exc()
 			result = str(e)
 			result_code = 500
 		self.db.off()
-
 		return jsonify(result), result_code
 
-	def api_info(self):
-		
-		#TODO Check authenticate
-
+	def apiGetList(self):
 		args = request.get_json()
-		
 		self.db.on()
+		self.db.returnType('LST_DIC')
 		try:
-			result = self.db.getDynamicInfo(args)
+			type = args['type']
+			code = args['code']
+			detail = self.db.getList(code)
+			# print("[MtDynamic-apiGetList] detail", detail) #DEBUG
+			listId = detail['id']
+			listQuery = detail['query']
+			del detail['query'] # Remove for security
+			# filters = self.db.getListFilter(listId) #TODO
+			headers = self.db.getListCol(listId)
+			rows = self.db.getListRow(listQuery, args)
+			actions = self.db.getAction(type, listId)
+			result = {
+				"detail": detail,
+				# "filters": filters,
+				"headers": headers,
+				"rows": rows,
+				"actions": actions,
+			}
 			result_code = 200
 		except Exception as e:
 			traceback.print_exc()
 			result = str(e)
 			result_code = 500
 		self.db.off()
-
 		return jsonify(result), result_code
 
-	def api_info_save(self):
+	def apiGetInfo(self):
+		args = request.get_json()
+		self.db.on()
+		self.db.returnType('LST_DIC')
+		try:
+			type = args['type']
+			code = args['code']
+			# Detail
+			detail = self.db.getInfo(code)
+			infoId = detail['id']
+			infoQuery = detail['query']
+			del detail['query'] # Remove for security
+			# Field
+			fields = self.db.getInfoField(infoId)
+			print("[MtDynamic:apiGetInfo] fields", fields) #DEBUG
+			# Form
+			form = {}
+			if "id" in args:
+				form = self.db.getInfoForm(infoQuery, args)
+			# Actions
+			actions = self.db.getAction(type, infoId)
+			# Contents
+			lstContentCode = [field['content'] for field in fields if 'content' in field] # Danh sách content
+			lstContentCode = list(dict.fromkeys(lstContentCode)) # Remove duplicate
+			contents, fields = self.db.getContent(lstContentCode, fields, form)
+			# Result
+			result = {
+				"detail": detail,
+				"fields": fields,
+				"form": form,
+				"actions": actions,
+				"contents": contents,
+			}
+			result_code = 200
+		except Exception as e:
+			traceback.print_exc()
+			result = str(e)
+			result_code = 500
+		self.db.off()
+		return jsonify(result), result_code
+
+	def apiSaveInfo(self):
 		
 		#TODO Check authenticate
 
@@ -69,19 +128,48 @@ class MtDynamic:
 		
 		self.db.on()
 		try:
-			result = self.db.getDynamicInfoSave(args)
-			if result:
-				result_code = 200
+			isUpdate = ('id' in args)
+			result = {}
+			idResult = self.db.saveInfo(args)
+			if isUpdate:
+				if idResult == -1:
+					result_code = 201
+					result['message'] = "Dữ liệu không có sự thay đổi"
+				else:
+					result_code = 200
+					result['message'] = "Cập nhật thành công"
 			else:
-				result_code = 201
+				result_code = 200
+				result['message'] = "Lưu thành công"
+				result['id'] = idResult
 		except Exception as e:
 			traceback.print_exc()
-			result = str(e)
+			result['message'] = str(e)
 			result_code = 500
 		self.db.off()
 
 		return jsonify(result), result_code
 
+	def apiGetTab(self):
+		args = request.get_json()
+		self.db.on()
+		try:
+			menus = self.db.getMenus()
+			detail = self.db.getTab(args['page'])
+			tabs = self.db.getTabPage(detail['id'])
+			# result = self.db.getTab(args)
+			result = {
+				'menus': menus,
+				'detail': detail,
+				'tabs': tabs,
+			}
+			result_code = 200
+		except Exception as e:
+			traceback.print_exc()
+			result = { 'message': str(e) }
+			result_code = 500
+		self.db.off()
+		return jsonify(result), result_code
 
 class MtDynamicDB:
 
@@ -89,200 +177,87 @@ class MtDynamicDB:
 
 	def __init__(self):
 		self.conn = None
-
+	
 	def on(self):
 		if self.conn != None:
 			self.off()
 		self.conn = sqlite3.connect(self.h_db_path)
-
 	def off(self):
 		if self.conn != None:
 			self.conn.close()
 			self.conn = None
-
-	def cbk_dict_factory(cursor, row):
-		d = {}
-		for idx, col in enumerate(cursor.description):
-			d[col[0]] = row[idx]
-		return d
-	
 	def query(self, sql, params):
-		return self.conn.execute(sql, params).fetchall()
-	
+		try:
+			return self.conn.execute(sql, params).fetchall()
+		except Exception as e:
+			print("[ERROR] sql: ", sql)
+			print("[ERROR] params: ", params)
+			raise e
 	def exec(self, sql, params):
 		self.conn.execute(sql, params)
 		self.conn.commit()
-	
-	def getDynamicList(self, args):
-		self.conn.row_factory = MtDynamicDB.cbk_dict_factory
+	def returnType(self, type):
+		if type == 'LST_DIC':
+			self.conn.row_factory = MtSystem.sql_dict_factory
 
-		pageCode = args["page"]
+	def getMenus(self):
+		menus = self.query("""
+			SELECT id, code, name, parent, link
+			FROM menu
+		""", [])
+		return MtDynamicUtils.buildMenuTree(menus)
 
-		# Detail List
-		sql = """
-			SELECT id, code, name, query FROM list WHERE code = ?
-		"""
-		params = [pageCode]
-		details = self.query(sql, params)
+	def getList(self, listCode):
+		print("[MtDynamic - getList] listCode", listCode)
+		details = self.query("""
+				SELECT id, code, name, query FROM list WHERE code = ?
+			""", [listCode])
 		if len(details) == 0:
 			raise Exception("Không tìm thấy trang")
-		detail = details[0]
-		listId = detail['id']
-		query = detail['query']
-		del detail['query'] # Bỏ query vì bảo mật
+		return details[0]
+	def getListFilter(self, listId):
+		return {} #TODO
+	def getListCol(self, listId):
+		return self.query("""
+				SELECT LOWER(code) key, name value
+				FROM list_col
+				WHERE list_id = ?
+				ORDER BY seq
+			""", [listId])
+	def getListRow(self, query, data):
+		sql, params = MtUtils.fillVarSql(query, data)
+		return self.query(sql, params)
 
-		# Header
-		sql = """
-			SELECT LOWER(code) key, name value
-			FROM list_col
-			WHERE list_id = ?
-			ORDER BY seq
-		"""
-		params = [listId]
-		headers = self.query(sql, params)
-
-		# Rows
-		sql = query
-		params = []
-		while True:
-			posb = sql.find('{')
-			if posb == -1:
-				break
-			pose = sql.find('}')
-			if pose == -1:
-				raise Exception("Cấu hình lỗi: Dấu { và } ko cùng số lượng: " + detail['query'])
-			
-			varName = sql[posb+1:pose]
-			if len(varName) == 0:
-				raise Exception("Cấu hình lỗi: Ko có tên biến giữa { và } : " + detail['query'])
-			if not varName in args:
-				raise Exception("Cấu hình lỗi: Ko tìm thấy biến trong yêu cầu:" + varName)
-			sql = sql.replace("{"+varName+"}", "?")
-			params.append(args[varName])
-		rows = self.query(sql, params)
-
-		# Actions
-		sql = """
-			SELECT code, name, type, func_type, func_data
-			FROM action
-			WHERE page_type = 'LIST'
-				AND page_id = ?
-			ORDER BY seq
-		"""
-		params = [listId]
-		actions = self.query(sql, params)
-
-		# Return
-		return {
-			"detail": detail,
-			"headers": headers,
-			"rows": rows,
-			"actions": actions
-		}
-
-	def getDynamicInfo(self, args):
-		
-		self.conn.row_factory = MtDynamicDB.cbk_dict_factory
-
-		pageCode = args["page"]
-		if "id" in args:
-			id = args["id"]
-		else:
-			id = None
-
-		lstContentCode = [] # Danh sách content
-
-		# Detail
-		sql = """
+	def getInfo(self, code):
+		details = self.query("""
 			SELECT id, code, name, i.'table', query
 			FROM info i
 			WHERE code = ?
-		"""
-		params = [pageCode]
-		details = self.query(sql, params)
+		""", [code])
 		if len(details) == 0:
 			raise Exception("Không tìm thấy trang")
-		detail = details[0]
-		infoId = detail['id']
-		query = detail['query']
-		del detail['query'] # Bỏ query vì bảo mật
-
-		# Field
-		sql = """
+		return details[0]
+	def getInfoField(self, infoId):
+		fields = self.query("""
 			SELECT LOWER(code) code, name, type, options
 			FROM info_field
 			WHERE info_id = ?
 			ORDER BY seq
-		"""
-		params = [infoId]
-		fields = self.query(sql, params)
-		for i, field in enumerate(fields):
-			# Process Options in field
-			options = field['options']
-			del field['options']
-			if options is not None:
-				options = MtUtils.process_struct_pair(options, 1)
-				options.update(field) # Đè field vào options tránh đè prop quan trọng
-				if 'content' in options: # Lưu danh sách content để load
-					lstContentCode.append(options['content'])
-				fields[i] = options # Cập nhật lại fields
-
-		# Form
-		if id is not None:
-			sql, params = MtUtils.fillVarSql(query, args, None, None)
-			# sql = query
-			# params = []
-
-			# while True:
-			# 	posb = sql.find('{')
-			# 	if posb == -1:
-			# 		break
-			# 	pose = sql.find('}')
-			# 	if pose == -1:
-			# 		raise Exception("Cấu hình lỗi: Dấu { và } ko cùng số lượng: " + detail['query'])
-				
-			# 	varName = sql[posb+1:pose]
-			# 	if len(varName) == 0:
-			# 		raise Exception("Cấu hình lỗi: Ko có tên biến giữa { và } : " + detail['query'])
-			# 	if not varName in args:
-			# 		raise Exception("Cấu hình lỗi: Ko tìm thấy biến trong yêu cầu: " + varName + " trong query: " + query)
-			# 	sql = sql.replace("{"+varName+"}", "?")
-			# 	params.append(args[varName])
-			forms = self.query(sql, params)
-			if len(forms) > 0:
-				form = forms[0]
-		else:
-			form = {}
-
-		# Actions
-		sql = """
-			SELECT code, name, type, func_type, func_data
-			FROM action
-			WHERE page_type = 'INFO'
-				AND page_id = ?
-		"""
-		params = [infoId]
-		actions = self.query(sql, params)
-
-		# Content
-		lstContentCode = list(dict.fromkeys(lstContentCode)) # Remove duplicate
-		contents, fields = self.getContent(lstContentCode, fields, form)
-
-		# Return
-		return {
-			"detail": detail,
-			"fields": fields,
-			"form": form,
-			"actions": actions,
-			"contents": contents
-		}
-
-	def getDynamicInfoSave(self, args):
+		""", [infoId])
+		return MtDynamicUtils.processFieldOptions(fields)
+	def getInfoForm(self, query, data):
+		sql, params = MtUtils.fillVarSql(query, data)
+		forms = self.query(sql, params)
+		if len(forms) > 0:
+			return forms[0]
+		return {}
+	def saveInfo(self, args):
 		
-		self.conn.row_factory = MtDynamicDB.cbk_dict_factory
+		self.conn.row_factory = MtSystem.sql_dict_factory
 
-		tableName = args["table"]
-		del args["table"]
+		tableName = args["_table_"]
+		# print("tableName:", tableName) #DEBUG
+		del args["_table_"]
 
 		# Kiểm tra tồn tại bảng và lấy các cột trong bảng
 		sql = """
@@ -300,7 +275,7 @@ class MtDynamicDB:
 		for column in columns:
 			colName = column['name']
 			lstColStr += "," + colName
-			if column['notnull'] == 1 and args[colName] is None:
+			if column['notnull'] == 1 and colName not in args:
 				raise Exception("Cột "+colName+" trong bảng "+tableName+" không được truyền NULL")
 
 		# Kiểm tra các cột của form có trong bảng không
@@ -315,19 +290,30 @@ class MtDynamicDB:
 			lstValueStr = ""
 			params = []
 			for key, value in args.items():
-				lstKeyStr += "," + key
+				lstKeyStr += ",'" + key + "'"
 				lstValueStr += ",?"
 				params.append(value)
 			lstKeyStr = lstKeyStr[1:]
 			lstValueStr = lstValueStr[1:]
 				
 			sql = """
-				INSERT INTO {0} ({1})
+				INSERT INTO '{0}' ({1})
 				VALUES ({2});
 			""".format(tableName, lstKeyStr, lstValueStr)
 
+			# print("sql:", sql) #DEBUG
+			# print("params:", params) #DEBUG
 			self.exec(sql, params)
-			
+
+			# Get insert id
+			sql = """
+				SELECT seq
+				FROM sqlite_sequence
+				WHERE name = ?
+			"""
+			resNewId = self.query(sql, [tableName])
+
+			return resNewId[0]['seq']
 		else: # Cập nhật
 
 			id = args['id']
@@ -355,9 +341,34 @@ class MtDynamicDB:
 				""".format(tableName, setSql[1:])
 				params.append(id)
 				self.exec(sql, params)
-				return True
+				return id
 			else:
-				return False
+				return -1
+
+	def getTab(self, tabCode):
+		self.conn.row_factory = MtSystem.sql_dict_factory
+		result = self.query(
+			""" SELECT id, code, name
+				FROM tab
+				WHERE code = ?
+			""" , [tabCode])
+		return result[0]
+	def getTabPage(self, tabId):
+		self.conn.row_factory = MtSystem.sql_dict_factory
+		return self.query(
+			""" SELECT code, name, page_type pageType, page_id pageId
+				FROM tab_page
+				WHERE tab_id = ?
+			""" , [tabId])
+
+	def getAction(self, pageType, pageId):
+		return self.query("""
+			SELECT code, name, type, func_type, func_data
+			FROM action
+			WHERE page_type = ?
+				AND page_id = ?
+			ORDER BY seq
+		""", [pageType, pageId])
 
 	def getContent(self, lstContentCode, fields, form):
 
@@ -370,11 +381,15 @@ class MtDynamicDB:
 			lstIdStr += ",?"
 			params.append(contentCode)
 		sql = """
-			SELECT code, c.'type', c.'data', dynamic
+			SELECT code, c.'type', c.'data'
 			FROM content c
 			WHERE code IN ({0})
 		""".format(lstIdStr[1:])
 		lstContent = self.query(sql, params)
+
+		# Mark dynamic
+		for i, content in enumerate(lstContent):
+			lstContent[i]['dynamic'] = (content['data'].find("{") >= 0)
 
 		# Find reference field value
 		for content in lstContent:
@@ -399,7 +414,8 @@ class MtDynamicDB:
 			params = []
 			if content['dynamic'] == 1: # Nhập biến vào chuỗi
 				if type == 'SQL':
-					data, params = MtUtils.fillVarSql(data, form, fields, result)
+					data, params = MtUtils.fillVarSql(data, form)
+					# data, params = MtUtils.fillVarSql(data, form, fields, result)
 				else:
 					data = MtUtils.fillVar(data, form, fields, result)
 			if type == 'LIST':
@@ -431,3 +447,35 @@ class MtDynamicDB:
 
 		# Return contents and update fields
 		return result, fields
+
+class MtDynamicUtils:
+	def buildMenuTree(menus):
+		# print(menus) #DEBUG
+		# Insert child into parent
+		lstRootId = []
+		for i, menu in enumerate(menus):
+			parentId = menu['parent']
+			if parentId is None:
+				lstRootId.append(i)
+			else:
+				# Find id
+				parentStt = -1
+				for j, menu2 in enumerate(menus):
+					if menu2['id'] == parentId:
+						parentStt = j
+						break
+				if parentStt >= 0:
+					if 'child' not in menus[parentStt]:
+						menus[parentStt]['child'] = []
+					menus[parentStt]['child'].append(menu)
+		# Select root menu
+		return [menu for i, menu in enumerate(menus) if i in lstRootId]
+	def processFieldOptions(fields):
+		for i, field in enumerate(fields):
+			options = field['options']
+			del field['options']
+			if options is not None:
+				extraProp = MtUtils.process_struct_pair(options, 1)
+				extraProp.update(field) # Đè field vào options tránh đè prop quan trọng
+				fields[i] = extraProp # Cập nhật lại fields
+		return fields

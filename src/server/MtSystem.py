@@ -9,14 +9,12 @@ def auth_check(token):
 	global auth_token
 	return (token == auth_token)
 
-
 # SQLite
 def sql_dict_factory(cursor, row):
 	d = {}
 	for idx, col in enumerate(cursor.description):
 		d[col[0]] = row[idx]
 	return d
-
 
 # Crypt
 crypt = None
