@@ -13,6 +13,13 @@ class Main:
 
 	def __init__(self):
 
+		# Process args
+		for i, arg in enumerate(sys.argv):
+			if i == 0: # Bỏ qua arg đầu tiên
+				continue
+			if arg == '-debug':
+				MtConfig.debug = True
+
 		# Init Cound DB
 		# self.cloud = MtCloud()
 
