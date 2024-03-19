@@ -27,19 +27,20 @@ class MtDynamic:
 		self.db.on()
 		self.db.returnType('LST_DIC')
 		try:
-			type = args['type']
-			code = args['code']
+			type = args.get('type')
+			id = args.get('id')
+			code = args.get('code')
 			result = {}
 			result['menus'] = self.db.getMenus()
 			if type == 'LIST':
-				res = self.getListPage(None, code, args)
-				result.update(res)
+				res = self.getListPage(id, code, args)
 			elif type == 'INFO':
-				res = self.getInfoPage(None, code, args)
-				result.update(res)
+				res = self.getInfoPage(id, code, args)
 			elif type == 'TAB':
-				res = self.getTabPage(None, code, args)
-				result.update(res)
+				res = self.getTabPage(id, code, args)
+			else:
+				raise Exception("Loại trang không hợp lệ!")
+			result.update(res)
 			result_code = 200
 		except Exception as e:
 			traceback.print_exc()
@@ -47,6 +48,71 @@ class MtDynamic:
 			result_code = 500
 		self.db.off()
 		return jsonify(result), result_code
+
+	def getListPage(self, id, code, args):
+		page = self.db.getList(id, code)
+		if id is None:
+			id = page['id']
+		listQuery = page['query']
+		del page['query'] # Remove for security
+		# filters = self.db.getListFilter(listId) #TODO
+		headers = self.db.getListCol(id)
+		rows = self.db.getListRow(listQuery, args)
+		actions = self.db.getAction('LIST', id)
+		return {
+			"page": page,
+			# "filters": filters,
+			"headers": headers,
+			"rows": rows,
+			"actions": actions,
+		}
+
+	def getInfoPage(self, id, code, args):
+		page = self.db.getInfo(id, code)
+		if id is None:
+			id = page['id']
+		infoQuery = page['query']
+		del page['query'] # Remove for security
+		fields = self.db.getInfoField(id)
+		form = {}
+		if "id" in args:
+			form = self.db.getInfoForm(infoQuery, args)
+		actions = self.db.getAction('INFO', id)
+		lstContentCode = [field['content'] for field in fields if 'content' in field] # Danh sách content
+		lstContentCode = list(dict.fromkeys(lstContentCode)) # Remove duplicate
+		contents, fields = self.db.getContent(lstContentCode, fields, form)
+		return {
+			'page': page,
+			'fields': fields,
+			'form': form,
+			'actions': actions,
+			'contents': contents,
+		}
+
+	def getTabPage(self, id, code, args):
+		page = self.db.getTab(id, code)
+		if id is None:
+			id = page['id']
+		tabs = self.db.getTabPage(id)
+		tabs[0] = self.loadFirstTab(tabs[0], args)
+		return {
+			'page': page,
+			'tabs': tabs,
+		}
+
+	def loadFirstTab(self, tab, args):
+		pageType = tab['pageType']
+		pageId = tab['pageId']
+		res = None
+		if pageType == 'LIST':
+			res = self.getListPage(pageId, None, args)
+		elif pageType == 'INFO':
+			res = self.getInfoPage(pageId, None, args)
+		elif pageType == 'TAB':
+			res = self.getTabPage(pageId, None, args)
+		if res is not None:
+			tab.update(res)
+		return tab
 
 	def apiSaveInfo(self):
 		
@@ -77,71 +143,6 @@ class MtDynamic:
 		self.db.off()
 
 		return jsonify(result), result_code
-
-	def getListPage(self, id, code, args):
-		type = args['type']
-		detail = self.db.getList(id, code)
-		listId = detail['id']
-		listQuery = detail['query']
-		del detail['query'] # Remove for security
-		# filters = self.db.getListFilter(listId) #TODO
-		headers = self.db.getListCol(listId)
-		rows = self.db.getListRow(listQuery, args)
-		actions = self.db.getAction(type, listId)
-		return {
-			"detail": detail,
-			# "filters": filters,
-			"headers": headers,
-			"rows": rows,
-			"actions": actions,
-		}
-
-	def getInfoPage(self, id, code, args):
-		type = args['type']
-		detail = self.db.getInfo(id, code)
-		infoId = detail['id']
-		infoQuery = detail['query']
-		del detail['query'] # Remove for security
-		fields = self.db.getInfoField(infoId)
-		form = {}
-		if "id" in args:
-			form = self.db.getInfoForm(infoQuery, args)
-		actions = self.db.getAction(type, infoId)
-		lstContentCode = [field['content'] for field in fields if 'content' in field] # Danh sách content
-		lstContentCode = list(dict.fromkeys(lstContentCode)) # Remove duplicate
-		contents, fields = self.db.getContent(lstContentCode, fields, form)
-		return {
-			'detail': detail,
-			'fields': fields,
-			'form': form,
-			'actions': actions,
-			'contents': contents,
-		}
-
-	def getTabPage(self, id, code, args):
-		type = args['type']
-		detail = self.db.getTab(id, code)
-		print(detail)
-		tabs = self.db.getTabPage(detail['id'])
-		tabs[0] = self.loadFirstTab(tabs[0], args)
-		return {
-			'detail': detail,
-			'tabs': tabs,
-		}
-
-	def loadFirstTab(self, tab, args):
-		pageType = tab['pageType']
-		pageId = tab['pageId']
-		res = None
-		if pageType == 'LIST':
-			res = self.getListPage(pageId, None, args)
-		elif pageType == 'INFO':
-			res = self.getInfoPage(pageId, None, args)
-		elif pageType == 'TAB':
-			res = self.getTabPage(pageId, None, args)
-		if res is not None:
-			tab.update(res)
-		return tab
 
 class MtDynamicDB:
 
@@ -191,10 +192,10 @@ class MtDynamicDB:
 		else:
 			sql += "id = ?"
 			params = [id]
-		details = self.query(sql, params)
-		if len(details) == 0:
+		pages = self.query(sql, params)
+		if len(pages) == 0:
 			raise Exception("Không tìm thấy trang")
-		return details[0]
+		return pages[0]
 	def getListFilter(self, listId):
 		return {} #TODO
 	def getListCol(self, listId):
@@ -216,10 +217,10 @@ class MtDynamicDB:
 		else:
 			sql += "id = ?"
 			params = [id]
-		details = self.query(sql, [code])
-		if len(details) == 0:
+		pages = self.query(sql, [code])
+		if len(pages) == 0:
 			raise Exception("Không tìm thấy trang")
-		return details[0]
+		return pages[0]
 	def getInfoField(self, infoId):
 		fields = self.query("""
 			SELECT LOWER(code) code, name, type, options
@@ -332,10 +333,10 @@ class MtDynamicDB:
 		else:
 			sql += "id = ?"
 			params = [id]
-		details = self.query(sql, params)
-		if len(details) == 0:
+		pages = self.query(sql, params)
+		if len(pages) == 0:
 			raise Exception("Không tìm thấy trang")
-		return details[0]
+		return pages[0]
 	def getTabPage(self, tabId):
 		self.conn.row_factory = MtSystem.sql_dict_factory
 		return self.query(
@@ -346,7 +347,7 @@ class MtDynamicDB:
 
 	def getAction(self, pageType, pageId):
 		return self.query("""
-			SELECT code, name, type, func_type, func_data
+			SELECT code, name, type, func_type funcType, func_data funcData
 			FROM action
 			WHERE page_type = ?
 				AND page_id = ?
