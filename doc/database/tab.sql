@@ -25,6 +25,6 @@ CREATE TABLE 'tab_page' (
 );
 
 INSERT INTO 'tab_page' ('code','name','tab_id','page_type','page_id') VALUES
-	 ('TEST1','Danh sách',1,'LIST','list/page=MGR_LIST')
-	,('TEST2','Chi tiết 1',1,'INFO','info/page=MGR_LIST&id=1')
+	 ('TEST1','Danh sách',1,'LIST',1)
+	,('TEST2','Chi tiết 1',1,'INFO',1)
 ;

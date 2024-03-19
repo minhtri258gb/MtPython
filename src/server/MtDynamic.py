@@ -28,16 +28,17 @@ class MtDynamic:
 		self.db.returnType('LST_DIC')
 		try:
 			type = args['type']
+			code = args['code']
 			result = {}
 			result['menus'] = self.db.getMenus()
 			if type == 'LIST':
-				res = self.getListPage(args)
+				res = self.getListPage(None, code, args)
 				result.update(res)
 			elif type == 'INFO':
-				res = self.getInfoPage(args)
+				res = self.getInfoPage(None, code, args)
 				result.update(res)
 			elif type == 'TAB':
-				res = self.getTabPage(args)
+				res = self.getTabPage(None, code, args)
 				result.update(res)
 			result_code = 200
 		except Exception as e:
@@ -77,10 +78,9 @@ class MtDynamic:
 
 		return jsonify(result), result_code
 
-	def getListPage(self, args):
+	def getListPage(self, id, code, args):
 		type = args['type']
-		code = args['code']
-		detail = self.db.getList(code)
+		detail = self.db.getList(id, code)
 		listId = detail['id']
 		listQuery = detail['query']
 		del detail['query'] # Remove for security
@@ -96,10 +96,9 @@ class MtDynamic:
 			"actions": actions,
 		}
 
-	def getInfoPage(self, args):
+	def getInfoPage(self, id, code, args):
 		type = args['type']
-		code = args['code']
-		detail = self.db.getInfo(code)
+		detail = self.db.getInfo(id, code)
 		infoId = detail['id']
 		infoQuery = detail['query']
 		del detail['query'] # Remove for security
@@ -119,15 +118,30 @@ class MtDynamic:
 			'contents': contents,
 		}
 
-	def getTabPage(self, args):
+	def getTabPage(self, id, code, args):
 		type = args['type']
-		code = args['code']
-		detail = self.db.getTab(code)
+		detail = self.db.getTab(id, code)
+		print(detail)
 		tabs = self.db.getTabPage(detail['id'])
+		tabs[0] = self.loadFirstTab(tabs[0], args)
 		return {
 			'detail': detail,
 			'tabs': tabs,
 		}
+
+	def loadFirstTab(self, tab, args):
+		pageType = tab['pageType']
+		pageId = tab['pageId']
+		res = None
+		if pageType == 'LIST':
+			res = self.getListPage(pageId, None, args)
+		elif pageType == 'INFO':
+			res = self.getInfoPage(pageId, None, args)
+		elif pageType == 'TAB':
+			res = self.getTabPage(pageId, None, args)
+		if res is not None:
+			tab.update(res)
+		return tab
 
 class MtDynamicDB:
 
@@ -169,10 +183,15 @@ class MtDynamicDB:
 		""", [])
 		return MtDynamicUtils.buildMenuTree(menus)
 
-	def getList(self, listCode):
-		details = self.query("""
-				SELECT id, code, name, query FROM list WHERE code = ?
-			""", [listCode])
+	def getList(self, id, code):
+		sql = "SELECT id, code, name, query FROM list WHERE "
+		if id is None:
+			sql += "code = ?"
+			params = [code]
+		else:
+			sql += "id = ?"
+			params = [id]
+		details = self.query(sql, params)
 		if len(details) == 0:
 			raise Exception("Không tìm thấy trang")
 		return details[0]
@@ -189,12 +208,15 @@ class MtDynamicDB:
 		sql, params = MtUtils.fillVarSql(query, data)
 		return self.query(sql, params)
 
-	def getInfo(self, code):
-		details = self.query("""
-			SELECT id, code, name, i.'table', query
-			FROM info i
-			WHERE code = ?
-		""", [code])
+	def getInfo(self, id, code):
+		sql = "SELECT id, code, name, i.'table', query FROM info i WHERE "
+		if id is None:
+			sql += "code = ?"
+			params = [code]
+		else:
+			sql += "id = ?"
+			params = [id]
+		details = self.query(sql, [code])
 		if len(details) == 0:
 			raise Exception("Không tìm thấy trang")
 		return details[0]
@@ -302,14 +324,18 @@ class MtDynamicDB:
 			else:
 				return -1
 
-	def getTab(self, tabCode):
-		self.conn.row_factory = MtSystem.sql_dict_factory
-		result = self.query(
-			""" SELECT id, code, name
-				FROM tab
-				WHERE code = ?
-			""" , [tabCode])
-		return result[0]
+	def getTab(self, id, code):
+		sql = "SELECT id, code, name FROM tab WHERE "
+		if id is None:
+			sql += "code = ?"
+			params = [code]
+		else:
+			sql += "id = ?"
+			params = [id]
+		details = self.query(sql, params)
+		if len(details) == 0:
+			raise Exception("Không tìm thấy trang")
+		return details[0]
 	def getTabPage(self, tabId):
 		self.conn.row_factory = MtSystem.sql_dict_factory
 		return self.query(
