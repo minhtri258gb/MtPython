@@ -10,16 +10,16 @@ CREATE TABLE 'info' (
 );
 
 INSERT INTO info ('code','name','query','table') VALUES
-	 ('MGR_MENU','Chi tiết menu','SELECT id, code, name, parent, link FROM menu WHERE id = {id}','menu')
-	,('MGR_LIST','Chi tiết danh sách','SELECT id, code, name, query FROM list WHERE id = {id}','list')
-	,('MGR_LIST_FILTER','Chi tiết bộ lọc danh sách','SELECT id, code, name, list_id, seq FROM list_filter WHERE id = {id}','list_filter')
-	,('MGR_LIST_COL','Chi tiết cột danh sách','SELECT id, code, name, list_id, seq FROM list_col WHERE id = {id}','list_col')
-	,('MGR_INFO','Chi tiết thông tin','SELECT id, code, name, query, i.''table'' FROM info i WHERE id = {id}','info')
-	,('MGR_INFO_FIELD','Chi tiết trường thông tin','SELECT id, code, name, info_id, type, options, seq FROM info_field WHERE id = {id}','info_field')
-	,('MGR_TAB','Chi tiết tab','SELECT id, code, name FROM tab WHERE id = {id}','tab')
-	,('MGR_TAB_PAGE','Chi tiết tab con','SELECT id, code, name, tab_id FROM tab_page WHERE id = {id}','tab_page')
-	,('MGR_ACTION','Chi tiết hành động','SELECT id, code, name, type, page_type, page_id, func_type, func_data, seq FROM action WHERE id = {id}','action')
-	,('MGR_CONTENT','Chi tiết nội dung','SELECT id, code, type, data FROM content WHERE id = {id}','content')
+	 ('MGR_MENU','Chi tiết menu','SELECT id, code, name, parent, link FROM menu WHERE id = {rowId}','menu')
+	,('MGR_LIST','Chi tiết danh sách','SELECT id, code, name, query FROM list WHERE id = {rowId}','list')
+	,('MGR_LIST_FILTER','Chi tiết bộ lọc danh sách','SELECT id, code, name, list_id, seq FROM list_filter WHERE id = {rowId}','list_filter')
+	,('MGR_LIST_COL','Chi tiết cột danh sách','SELECT id, code, name, list_id, seq FROM list_col WHERE id = {rowId}','list_col')
+	,('MGR_INFO','Chi tiết thông tin','SELECT id, code, name, query, i.''table'' FROM info i WHERE id = {rowId}','info')
+	,('MGR_INFO_FIELD','Chi tiết trường thông tin','SELECT id, code, name, info_id, type, options, seq FROM info_field WHERE id = {rowId}','info_field')
+	,('MGR_TAB','Chi tiết tab','SELECT id, code, name FROM tab WHERE id = {rowId}','tab')
+	,('MGR_TAB_PAGE','Chi tiết tab con','SELECT id, code, name, tab_id FROM tab_page WHERE id = {rowId}','tab_page')
+	,('MGR_ACTION','Chi tiết hành động','SELECT id, code, name, type, page_type, page_id, func_type, func_data, seq FROM action WHERE id = {rowId}','action')
+	,('MGR_CONTENT','Chi tiết nội dung','SELECT id, code, type, data FROM content WHERE id = {rowId}','content')
 ;
 
 -- ##############################################################

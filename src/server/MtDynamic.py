@@ -31,7 +31,10 @@ class MtDynamic:
 			id = args.get('id')
 			code = args.get('code')
 			result = {}
-			result['menus'] = self.db.getMenus()
+
+			if 'loadMenu' in args:
+				result['menus'] = self.db.getMenus()
+			
 			if type == 'LIST':
 				res = self.getListPage(id, code, args)
 			elif type == 'INFO':
@@ -75,7 +78,7 @@ class MtDynamic:
 		del page['query'] # Remove for security
 		fields = self.db.getInfoField(id)
 		form = {}
-		if "id" in args:
+		if "rowId" in args:
 			form = self.db.getInfoForm(infoQuery, args)
 		actions = self.db.getAction('INFO', id)
 		lstContentCode = [field['content'] for field in fields if 'content' in field] # Danh sách content
@@ -217,7 +220,7 @@ class MtDynamicDB:
 		else:
 			sql += "id = ?"
 			params = [id]
-		pages = self.query(sql, [code])
+		pages = self.query(sql, params)
 		if len(pages) == 0:
 			raise Exception("Không tìm thấy trang")
 		return pages[0]
@@ -340,7 +343,7 @@ class MtDynamicDB:
 	def getTabPage(self, tabId):
 		self.conn.row_factory = MtSystem.sql_dict_factory
 		return self.query(
-			""" SELECT code, name, page_type pageType, page_id pageId
+			""" SELECT id, code, name, page_type pageType, page_id pageId
 				FROM tab_page
 				WHERE tab_id = ?
 			""" , [tabId])
