@@ -11,7 +11,6 @@ class MtDynamic:
 	def __init__(self, _mt):
 		self.mt = _mt
 		self.db = MtDynamicDB()
-
 	def register(self):
 
 		@self.mt.app.route("/api/dynamic/getPage", methods=['POST'])
@@ -51,17 +50,25 @@ class MtDynamic:
 			result_code = 500
 		self.db.off()
 		return jsonify(result), result_code
-
 	def getListPage(self, id, code, args):
+		# Page
 		page = self.db.getList(id, code)
 		if id is None:
 			id = page['id']
 		listQuery = page['query']
 		del page['query'] # Remove for security
 		# filters = self.db.getListFilter(listId) #TODO
+		# Headers
 		headers = self.db.getListCol(id)
+		headers.insert(0, { "key": "stt", "value": "STT" })
+		# Rows
 		rows = self.db.getListRow(listQuery, args)
+		# Actions
 		actions = self.db.getAction('LIST', id)
+		# Update headers
+		if len(actions) > 0:
+			headers.append({ "key": "overflow", "empty": True })
+		# Result
 		return {
 			"page": page,
 			# "filters": filters,
@@ -69,7 +76,6 @@ class MtDynamic:
 			"rows": rows,
 			"actions": actions,
 		}
-
 	def getInfoPage(self, id, code, args):
 		page = self.db.getInfo(id, code)
 		if id is None:
@@ -80,18 +86,23 @@ class MtDynamic:
 		form = {}
 		if "rowId" in args:
 			form = self.db.getInfoForm(infoQuery, args)
+		# ACTIONS
 		actions = self.db.getAction('INFO', id)
-		lstContentCode = [field['content'] for field in fields if 'content' in field] # Danh sách content
+		# CONTENTS
+		# Lấy danh sách content code có dùng
+		lstContentCode = [field['content'] for field in fields if 'content' in field] # Lấy contentCode từ fields
 		lstContentCode = list(dict.fromkeys(lstContentCode)) # Remove duplicate
-		contents, fields = self.db.getContent(lstContentCode, fields, form)
+		contents = self.db.getContent(lstContentCode)
+		packData = args
+		packData.update(form)
+		contentsData, fields = self.loadContentData(contents, packData, fields)
 		return {
 			'page': page,
 			'fields': fields,
 			'form': form,
 			'actions': actions,
-			'contents': contents,
+			'contents': contentsData,
 		}
-
 	def getTabPage(self, id, code, args):
 		page = self.db.getTab(id, code)
 		if id is None:
@@ -102,7 +113,6 @@ class MtDynamic:
 			'page': page,
 			'tabs': tabs,
 		}
-
 	def loadFirstTab(self, tab, args):
 		pageType = tab['pageType']
 		pageId = tab['pageId']
@@ -115,7 +125,80 @@ class MtDynamic:
 			res = self.getTabPage(pageId, None, args)
 		if res is not None:
 			tab.update(res)
+			tab['isLoaded'] = True
 		return tab
+	def loadContentData(self, contents, form, fields):
+		
+		# Process Extra
+		for i, content in enumerate(contents):
+			if 'extra' not in content:
+				continue
+			extra = MtUtils.process_struct_pair(content['extra'], 1)
+			for key in extra:
+				if key in form:
+					contents[i]['data'] = content['data'] + extra[key]
+
+		# Mark dynamic
+		for i, content in enumerate(contents):
+			contents[i]['dynamic'] = (content['data'].find("{") >= 0)
+
+		# Find reference field value
+		for content in contents:
+			if content['dynamic'] == 0:
+				continue
+			# Find field use content
+			lstFieldAffect = [i for i, f in enumerate(fields) if 'content' in f and f['content'] == content['code']]
+			letVar = MtUtils.removeDuplicate(MtUtils.findVar(content['data']))
+			for i, field in enumerate(fields):
+				if field['code'] in letVar:
+					if not 'affect' in fields[i]:
+						fields[i]['affect'] = []
+					lstAffectId = fields[i]['affect']
+					lstAffectId.extend(lstFieldAffect)
+					fields[i]['affect'] = MtUtils.removeDuplicate(lstAffectId)
+
+		# Get content data static
+		result = {}
+		for content in contents:
+			type = content['type']
+			data = content['data']
+			params = []
+			if content['dynamic'] == 1: # Nhập biến vào chuỗi
+				if type == 'SQL':
+					data, params = MtUtils.fillVarSql(data, form)
+					# data, params = MtUtils.fillVarSql(data, form, fields, result)
+				else:
+					data = MtUtils.fillVar(data, form, fields, result)
+			if type == 'LIST':
+				datas = MtUtils.process_struct_list(content['data'], 2)
+			elif type == 'PAIR':
+				datas = MtUtils.process_struct_pair(content['data'], 2)
+			elif type == 'SQL':
+				datas = self.db.query(data, params)
+			result[content['code']] = datas
+
+		# Get content data dynamic
+		result = {}
+		for content in contents:
+			type = content['type']
+			data = content['data']
+			params = []
+			if content['dynamic'] == 1: # Nhập biến vào chuỗi
+				if type == 'SQL':
+					data, params = MtUtils.fillVarSql(data, form)
+					# data, params = MtUtils.fillVarSql(data, form, fields, result)
+				else:
+					data = MtUtils.fillVar(data, form, fields, result)
+			if type == 'LIST':
+				datas = MtUtils.process_struct_list(content['data'], 2)
+			elif type == 'PAIR':
+				datas = MtUtils.process_struct_pair(content['data'], 2)
+			elif type == 'SQL':
+				datas = self.db.query(data, params)
+			result[content['code']] = datas
+
+		# Return contents and update fields
+		return result, fields
 
 	def apiSaveInfo(self):
 		
@@ -124,6 +207,7 @@ class MtDynamic:
 		args = request.get_json()
 		
 		self.db.on()
+		self.db.returnType('LST_DIC')
 		try:
 			isUpdate = ('id' in args)
 			result = {}
@@ -226,11 +310,11 @@ class MtDynamicDB:
 		return pages[0]
 	def getInfoField(self, infoId):
 		fields = self.query("""
-			SELECT LOWER(code) code, name, type, options
-			FROM info_field
-			WHERE info_id = ?
-			ORDER BY seq
-		""", [infoId])
+				SELECT LOWER(code) code, name, type, options
+				FROM info_field
+				WHERE info_id = ?
+				ORDER BY seq
+			""", [infoId])
 		return MtDynamicUtils.processFieldOptions(fields)
 	def getInfoForm(self, query, data):
 		sql, params = MtUtils.fillVarSql(query, data)
@@ -240,8 +324,6 @@ class MtDynamicDB:
 		return {}
 	def saveInfo(self, args):
 		
-		self.conn.row_factory = MtSystem.sql_dict_factory
-
 		tableName = args["_table_"]
 		del args["_table_"]
 
@@ -341,9 +423,8 @@ class MtDynamicDB:
 			raise Exception("Không tìm thấy trang")
 		return pages[0]
 	def getTabPage(self, tabId):
-		self.conn.row_factory = MtSystem.sql_dict_factory
-		return self.query(
-			""" SELECT id, code, name, page_type pageType, page_id pageId
+		return self.query("""
+				SELECT id, code, name, page_type pageType, page_id pageId
 				FROM tab_page
 				WHERE tab_id = ?
 			""" , [tabId])
@@ -357,93 +438,22 @@ class MtDynamicDB:
 			ORDER BY seq
 		""", [pageType, pageId])
 
-	def getContent(self, lstContentCode, fields, form):
-
-		# Get content info
-		if len(lstContentCode) == 0:
-			return {}, fields
+	def getContent(self, strLstContentCode):
+		if len(strLstContentCode) == 0:
+			return []
 		lstIdStr = ""
 		params = []
-		for contentCode in lstContentCode:
+		for contentCode in strLstContentCode:
 			lstIdStr += ",?"
 			params.append(contentCode)
 		sql = """
-			SELECT code, c.'type', c.'data', extra
-			FROM content c
-			WHERE code IN ({0})
-		""".format(lstIdStr[1:])
-		lstContent = self.query(sql, params)
+				SELECT code, c.'type', c.'data', extra
+				FROM content c
+				WHERE code IN ({0})
+			""".format(lstIdStr[1:])
+		return self.query(sql, params)
 
-		# Process Extra
-		for i, content in enumerate(lstContent):
-			if 'extra' not in content:
-				continue
-			extra = MtUtils.process_struct_pair(content['extra'], 1)
-			for key in extra:
-				if key in form:
-					lstContent[i]['data'] = content['data'] + extra[key]
-
-		# Mark dynamic
-		for i, content in enumerate(lstContent):
-			lstContent[i]['dynamic'] = (content['data'].find("{") >= 0)
-
-		# Find reference field value
-		for content in lstContent:
-			if content['dynamic'] == 0:
-				continue
-			# Find field use content
-			lstFieldAffect = [i for i, f in enumerate(fields) if 'content' in f and f['content'] == content['code']]
-			letVar = MtUtils.removeDuplicate(MtUtils.findVar(content['data']))
-			for i, field in enumerate(fields):
-				if field['code'] in letVar:
-					if not 'affect' in fields[i]:
-						fields[i]['affect'] = []
-					lstAffectId = fields[i]['affect']
-					lstAffectId.extend(lstFieldAffect)
-					fields[i]['affect'] = MtUtils.removeDuplicate(lstAffectId)
-
-		# Get content data static
-		result = {}
-		for content in lstContent:
-			type = content['type']
-			data = content['data']
-			params = []
-			if content['dynamic'] == 1: # Nhập biến vào chuỗi
-				if type == 'SQL':
-					data, params = MtUtils.fillVarSql(data, form)
-					# data, params = MtUtils.fillVarSql(data, form, fields, result)
-				else:
-					data = MtUtils.fillVar(data, form, fields, result)
-			if type == 'LIST':
-				datas = MtUtils.process_struct_list(content['data'], 2)
-			elif type == 'PAIR':
-				datas = MtUtils.process_struct_pair(content['data'], 2)
-			elif type == 'SQL':
-				datas = self.query(data, params)
-			result[content['code']] = datas
-
-		# Get content data dynamic
-		result = {}
-		for content in lstContent:
-			type = content['type']
-			data = content['data']
-			params = []
-			if content['dynamic'] == 1: # Nhập biến vào chuỗi
-				if type == 'SQL':
-					data, params = MtUtils.fillVarSql(data, form)
-					# data, params = MtUtils.fillVarSql(data, form, fields, result)
-				else:
-					data = MtUtils.fillVar(data, form, fields, result)
-			if type == 'LIST':
-				datas = MtUtils.process_struct_list(content['data'], 2)
-			elif type == 'PAIR':
-				datas = MtUtils.process_struct_pair(content['data'], 2)
-			elif type == 'SQL':
-				datas = self.query(data, params)
-			result[content['code']] = datas
-
-		# Return contents and update fields
-		return result, fields
+	# def getContent2(self, lstContentCode, fields, form):
 
 class MtDynamicUtils:
 	def buildMenuTree(menus):
