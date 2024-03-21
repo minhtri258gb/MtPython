@@ -3,6 +3,7 @@ import os
 import logging
 from flask import Flask
 from flask_cors import CORS
+from dotenv import load_dotenv
 from MtCloud import MtCloud
 import MtConfig
 from MtCore import MtCore
@@ -12,6 +13,9 @@ global mt
 class Main:
 
 	def __init__(self):
+
+		# Load enviroment variable
+		load_dotenv()
 
 		# Process args
 		for i, arg in enumerate(sys.argv):
@@ -24,7 +28,13 @@ class Main:
 		# self.cloud = MtCloud()
 
 		# Init API Server với static file folder
-		self.app = Flask(__name__, static_url_path = '', static_folder = MtConfig.statis_path)
+		isStaticServer = os.getenv('STATIC_SERVER')
+		if isStaticServer == '1':
+			staticPath = os.getenv('DIR_STATIC')
+			self.app = Flask(__name__, static_url_path = '', staticPath)
+		else:
+			self.app = Flask(__name__)
+
 
 		# Fix lỗi CORS
 		self.cors = CORS(self.app)

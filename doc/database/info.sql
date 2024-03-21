@@ -33,61 +33,62 @@ CREATE TABLE 'info_field' (
 	,'info_id' INTEGER NOT NULL	-- Ref ID
 	,'type' TEXT(64) NOT NULL	-- TEXT, TEXTAREA, NUMBER, CHECKBOX, SELECTBOX
 	,'options' TEXT(512)		-- Tùy chỉnh cho loại trường
+	,'default' TEXT(256)		-- Giá trị mặc định
 	,'seq' INTEGER				-- Thứ tự sắp xếp
 );
 
-INSERT INTO 'info_field' ('info_id','code','name','type','options','seq') VALUES
+INSERT INTO 'info_field' ('info_id','code','name','type','options','default','seq') VALUES
 	-- MGR_MENU
-	 (1,'CODE','Mã menu','TEXT',NULL,1)
-	,(1,'NAME','Tên menu','TEXT',NULL,2)
-	,(1,'PARENT','Menu cha','SELECTBOX','content:PARENT_MENU',3)
-	,(1,'LINK','Đường dẫn','TEXT',NULL,4)
+	 (1,'CODE','Mã menu','TEXT',NULL,NULL,1)
+	,(1,'NAME','Tên menu','TEXT',NULL,NULL,2)
+	,(1,'PARENT','Menu cha','SELECTBOX','content:PARENT_MENU',NULL,3)
+	,(1,'LINK','Đường dẫn','TEXT',NULL,NULL,4)
 	-- MGR_LIST
-	,(2,'CODE','Mã danh sách','TEXT',NULL,1)
-	,(2,'NAME','Tên danh sách','TEXT',NULL,2)
-	,(2,'QUERY','Truy vấn','TEXTAREA',NULL,3)
+	,(2,'CODE','Mã danh sách','TEXT',NULL,NULL,1)
+	,(2,'NAME','Tên danh sách','TEXT',NULL,NULL,2)
+	,(2,'QUERY','Truy vấn','TEXTAREA',NULL,NULL,3)
 	-- MGR_LIST_FILTER
-	,(3,'CODE','Mã danh sách','TEXT',NULL,1)
-	,(3,'NAME','Tên danh sách','TEXT',NULL,2)
-	,(3,'LIST_ID','Màn hình danh sách','SELECTBOX','content:LIST',3)
-	,(3,'FIELD_TYPE','Loại trường','SELECTBOX','content:FIELD_TYPE',4)
-	,(3,'FIELD_OPTIONS','Tùy chỉnh trường','TEXTAREA',NULL,5)
-	,(3,'SEQ','Thứ tự','NUMBER',NULL,6)
+	,(3,'CODE','Mã danh sách','TEXT',NULL,NULL,1)
+	,(3,'NAME','Tên danh sách','TEXT',NULL,NULL,2)
+	,(3,'LIST_ID','Màn hình danh sách','SELECTBOX','content:LIST',NULL,3)
+	,(3,'FIELD_TYPE','Loại trường','SELECTBOX','content:FIELD_TYPE',NULL,4)
+	,(3,'FIELD_OPTIONS','Tùy chỉnh trường','TEXTAREA',NULL,NULL,5)
+	,(3,'SEQ','Thứ tự','NUMBER',NULL,NULL,6)
 	-- MGR_LIST_COL
-	,(4,'CODE','Mã cột','TEXT',NULL,1)
-	,(4,'NAME','Tên cột','TEXT',NULL,2)
-	,(4,'LIST_ID','Danh sách','SELECTBOX','content:LIST',3)
-	,(4,'SEQ','Thứ tự','NUMBER',NULL,4)
+	,(4,'CODE','Mã cột','TEXT',NULL,NULL,1)
+	,(4,'NAME','Tên cột','TEXT',NULL,NULL,2)
+	,(4,'LIST_ID','Danh sách','SELECTBOX','content:LIST',NULL,3)
+	,(4,'SEQ','Thứ tự','NUMBER',NULL,NULL,4)
 	-- MGR_INFO
-	,(5,'CODE','Mã thông tin','TEXT',NULL,1)
-	,(5,'NAME','Tên thông tin','TEXT',NULL,2)
-	,(5,'QUERY','Truy vấn','TEXTAREA',NULL,3)
-	,(5,'TABLE','Tên bảng','TEXT',NULL,4)
+	,(5,'CODE','Mã thông tin','TEXT',NULL,NULL,1)
+	,(5,'NAME','Tên thông tin','TEXT',NULL,NULL,2)
+	,(5,'QUERY','Truy vấn','TEXTAREA',NULL,NULL,3)
+	,(5,'TABLE','Tên bảng','TEXT',NULL,NULL,4)
 	-- MGR_INFO_FIELD
-	,(6,'CODE','Mã trường','TEXT',NULL,1)
-	,(6,'NAME','Tên trường','TEXT',NULL,2)
-	,(6,'INFO_ID','Chi tiết','SELECTBOX','content:INFO',3)
-	,(6,'TYPE','Loại trường','SELECTBOX','content:FIELD_TYPE',4)
-	,(6,'OPTIONS','Tùy chỉnh trường','TEXTAREA',NULL,5)
-	,(6,'SEQ','Thứ tự','NUMBER',NULL,6)
+	,(6,'CODE','Mã trường','TEXT',NULL,NULL,1)
+	,(6,'NAME','Tên trường','TEXT',NULL,NULL,2)
+	,(6,'INFO_ID','Chi tiết','SELECTBOX','content:INFO',NULL,3)
+	,(6,'TYPE','Loại trường','SELECTBOX','content:FIELD_TYPE',NULL,4)
+	,(6,'OPTIONS','Tùy chỉnh trường','TEXTAREA',NULL,NULL,5)
+	,(6,'SEQ','Thứ tự','NUMBER',NULL,NULL,6)
 	-- MGR_TAB
-	,(7,'CODE','Mã tab','TEXT',NULL,1)
-	,(7,'NAME','Tên tab','TEXT',NULL,2)
+	,(7,'CODE','Mã tab','TEXT',NULL,NULL,1)
+	,(7,'NAME','Tên tab','TEXT',NULL,NULL,2)
 	-- MGR_TAB_PAGE
-	,(8,'CODE','Mã tab con','TEXT',NULL,1)
-	,(8,'NAME','Tên tab con','TEXT',NULL,2)
-	,(8,'TAB_ID','Tab','SELECTBOX','content:TAB',3)
+	,(8,'CODE','Mã tab con','TEXT',NULL,NULL,1)
+	,(8,'NAME','Tên tab con','TEXT',NULL,NULL,2)
+	,(8,'TAB_ID','Tab','SELECTBOX','content:TAB',NULL,3)
 	-- MGR_ACTION
-	,(9,'CODE','Mã trường','TEXT',NULL,1)
-	,(9,'NAME','Tên trường','TEXT',NULL,2)
-	,(9,'TYPE','Loại trường','SELECTBOX','content:FIELD_TYPE',3)
-	,(9,'PAGE_TYPE','Loại màn hình','SELECTBOX','content:PAGE_TYPE',4)
-	,(9,'PAGE_ID','Màn hình','SELECTBOX','content:PAGE',5)
-	,(9,'FUNC_TYPE','Loại chức năng','SELECTBOX','content:FUNC_TYPE',6)
-	,(9,'FUNC_DATA','Nội dung chức năng','TEXTAREA',NULL,7)
-	,(9,'SEQ','Thứ tự','NUMBER',NULL,8)
+	,(9,'CODE','Mã trường','TEXT',NULL,NULL,1)
+	,(9,'NAME','Tên trường','TEXT',NULL,NULL,2)
+	,(9,'TYPE','Loại trường','SELECTBOX','content:FIELD_TYPE',NULL,3)
+	,(9,'PAGE_TYPE','Loại màn hình','SELECTBOX','content:PAGE_TYPE','{pageType}',4)
+	,(9,'PAGE_ID','Màn hình','SELECTBOX','content:PAGE','{pageId}',5)
+	,(9,'FUNC_TYPE','Loại chức năng','SELECTBOX','content:FUNC_TYPE',NULL,6)
+	,(9,'FUNC_DATA','Nội dung chức năng','TEXTAREA',NULL,NULL,7)
+	,(9,'SEQ','Thứ tự','NUMBER',NULL,NULL,8)
 	-- MGR_CONTENT
-	,(10,'CODE','Mã nội dung','TEXT',NULL,1)
-	,(10,'TYPE','Cấu trúc','SELECTBOX','content:CONTENT_TYPE',2)
-	,(10,'DATA','Dữ liệu','TEXTAREA',NULL,3)
+	,(10,'CODE','Mã nội dung','TEXT',NULL,NULL,1)
+	,(10,'TYPE','Cấu trúc','SELECTBOX','content:CONTENT_TYPE',NULL,2)
+	,(10,'DATA','Dữ liệu','TEXTAREA',NULL,NULL,3)
 ;

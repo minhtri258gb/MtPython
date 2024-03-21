@@ -310,8 +310,8 @@ class MtDynamicDB:
 		return pages[0]
 	def getInfoField(self, infoId):
 		fields = self.query("""
-				SELECT LOWER(code) code, name, type, options
-				FROM info_field
+				SELECT LOWER(code) code, name, type, options, f.'default'
+				FROM info_field f
 				WHERE info_id = ?
 				ORDER BY seq
 			""", [infoId])

@@ -5,8 +5,6 @@ debug = False
 # System
 hostname = "0.0.0.0"
 app_port = 80
-statis_path = "D:/Projects/MtClient/"
-# statis_path = "D:/Projects/MtSvelte/dist/"
 tmp_path = './res/tmp/'
 
 # Application
