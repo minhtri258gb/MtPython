@@ -15,7 +15,8 @@ class Main:
 	def __init__(self):
 
 		# Load enviroment variable
-		load_dotenv()
+		projectPath = os.path.abspath(os.getcwd())
+		load_dotenv(os.path.join(projectPath, '.env'))
 
 		# Process args
 		for i, arg in enumerate(sys.argv):
@@ -31,7 +32,7 @@ class Main:
 		isStaticServer = os.getenv('STATIC_SERVER')
 		if isStaticServer == '1':
 			staticPath = os.getenv('DIR_STATIC')
-			self.app = Flask(__name__, static_url_path = '', staticPath)
+			self.app = Flask(__name__, static_url_path = '', static_folder=staticPath)
 		else:
 			self.app = Flask(__name__)
 
