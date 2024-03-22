@@ -26,7 +26,7 @@ struct:
 INSERT INTO 'content' ('code','type','data','extra') VALUES
 	 ('PAGE_TYPE','LIST','LIST,INFO',NULL)
 	,('FIELD_TYPE','LIST','TEXT,TEXTAREA,NUMBER,CHECKBOX,SELECTBOX',NULL)
-	,('FUNC_TYPE','LIST','LINK,SUBMIT',NULL)
+	,('FUNC_TYPE','LIST','GO,BACK,SAVE,POPUP_GO',NULL)
 	,('CONTENT_TYPE','LIST','LIST,PAIR,JSON,SQL',NULL)
 	,('PARENT_MENU','SQL','SELECT id key, name value FROM menu WHERE 1=1','id: and id!={id}')
 	,('LIST','SQL','SELECT id key, name value FROM list',NULL)

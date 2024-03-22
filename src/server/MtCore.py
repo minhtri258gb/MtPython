@@ -17,10 +17,12 @@ class MtCore:
 		self.mt = mt
 
 	def register(self):
+
+		statis_path = os.getenv('DIR_STATIC')
 		
 		@self.mt.app.route('/')
 		def api_home_page():
-			return send_from_directory(MtConfig.statis_path, path="./home/index.html")
+			return send_from_directory(statis_path, path="./home/index.html")
 
 		@self.mt.app.route('/<appName>')
 		@self.mt.app.route('/<appName>/')
@@ -30,9 +32,9 @@ class MtCore:
 				if appName not in MtConfig.list_app:
 					return "App not found"
 
-				fullpath = MtConfig.statis_path + appName
+				fullpath = statis_path + appName
 				if (os.path.exists(fullpath) and os.path.isdir(fullpath)):
-					return send_from_directory(MtConfig.statis_path, path=appName+"/index.html")
+					return send_from_directory(statis_path, path=appName+"/index.html")
 				
 			except Exception as e:
 				print(type(e), e)

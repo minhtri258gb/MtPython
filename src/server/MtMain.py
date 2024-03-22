@@ -29,7 +29,7 @@ class Main:
 		# self.cloud = MtCloud()
 
 		# Init API Server với static file folder
-		isStaticServer = os.getenv('STATIC_SERVER')
+		isStaticServer = os.getenv('SERVER_STATIC')
 		if isStaticServer == '1':
 			staticPath = os.getenv('DIR_STATIC')
 			self.app = Flask(__name__, static_url_path = '', static_folder=staticPath)

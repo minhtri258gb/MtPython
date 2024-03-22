@@ -272,7 +272,7 @@ class MtDynamicDB:
 		return MtDynamicUtils.buildMenuTree(menus)
 
 	def getList(self, id, code):
-		sql = "SELECT id, code, name, query FROM list WHERE "
+		sql = "SELECT id, code, name, query, hasBack FROM list WHERE "
 		if id is None:
 			sql += "code = ?"
 			params = [code]
@@ -431,7 +431,7 @@ class MtDynamicDB:
 
 	def getAction(self, pageType, pageId):
 		return self.query("""
-			SELECT code, name, type, func_type funcType, func_data funcData
+			SELECT code, name, pos, type, data
 			FROM action
 			WHERE page_type = ?
 				AND page_id = ?

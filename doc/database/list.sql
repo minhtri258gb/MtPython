@@ -6,19 +6,20 @@ CREATE TABLE 'list' (
 	,'code' TEXT(64) NOT NULL
 	,'name' TEXT(256) NOT NULL
 	,'query' TEXT(1024) NOT NULL
+	,'hasBack' INTEGER DEFAULT 0 NOT NULL
 );
 
-INSERT INTO 'list' ('code','name','query') VALUES
-	 ('MGR_MENU','Quản lý menu','SELECT id, code, name FROM menu')
-	,('MGR_LIST','Quản lý danh sách','SELECT id, code, name FROM list')
-	,('MGR_LIST_FILTER','Quản lý bộ lọc danh sách','SELECT id, code, name FROM list_filter WHERE list_id = {listId} ORDER BY seq')
-	,('MGR_LIST_COL','Quản lý cột danh sách','SELECT id, code, name FROM list_col WHERE list_id = {listId} ORDER BY seq')
-	,('MGR_INFO','Quản lý chi tiết','SELECT id, code, name FROM info')
-	,('MGR_INFO_FIELD','Quản lý trường chi tiết',"SELECT id, code, name FROM info_field WHERE info_id = {infoId}")
-	,('MGR_TAB','Quản lý Tab','SELECT id, code, name FROM tab')
-	,('MGR_TAB_PAGE','Quản lý Tab con','SELECT id, code, name FROM tab_page')
-	,('MGR_ACTION','Quản lý hành động','SELECT id, code, name FROM action WHERE page_type = {pageType} and page_id = {pageId}')
-	,('MGR_CONTENT','Quản lý nội dung','SELECT id, code, type, data FROM content')
+INSERT INTO 'list' ('code','name','query','hasBack') VALUES
+	 ('MGR_MENU','Quản lý menu','SELECT id, code, name FROM menu',0)
+	,('MGR_LIST','Quản lý danh sách','SELECT id, code, name FROM list',0)
+	,('MGR_LIST_FILTER','Quản lý bộ lọc danh sách','SELECT id, code, name FROM list_filter WHERE list_id = {listId} ORDER BY seq',1)
+	,('MGR_LIST_COL','Quản lý cột danh sách','SELECT id, code, name FROM list_col WHERE list_id = {listId} ORDER BY seq',1)
+	,('MGR_INFO','Quản lý chi tiết','SELECT id, code, name FROM info',0)
+	,('MGR_INFO_FIELD','Quản lý trường chi tiết',"SELECT id, code, name FROM info_field WHERE info_id = {infoId}",1)
+	,('MGR_TAB','Quản lý Tab','SELECT id, code, name FROM tab',0)
+	,('MGR_TAB_PAGE','Quản lý Tab con','SELECT id, code, name FROM tab_page',1)
+	,('MGR_ACTION','Quản lý hành động','SELECT id, code, name FROM action WHERE page_type = {pageType} and page_id = {pageId}',1)
+	,('MGR_CONTENT','Quản lý nội dung','SELECT id, code, type, data FROM content',0)
 ;
 
 -- ##############################################################
