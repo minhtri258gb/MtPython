@@ -46,7 +46,8 @@ class MtDynamic:
 			result_code = 200
 		except Exception as e:
 			traceback.print_exc()
-			result = str(e)
+			errMsg = str(e)#.encode(encoding='UTF-8')
+			result = { 'message': errMsg }
 			result_code = 500
 		self.db.off()
 		return jsonify(result), result_code
@@ -63,8 +64,22 @@ class MtDynamic:
 		headers.insert(0, { "key": "stt", "value": "STT" })
 		# Rows
 		rows = self.db.getListRow(listQuery, args)
+		if 'process' in  page:
+			print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", page['process'])
+			pass
+		for i, row in enumerate(rows):
+			row['stt'] = i+1
 		# Actions
-		actions = self.db.getAction('LIST', id)
+		actionsRaw = self.db.getAction('LIST', id)
+		actions = []
+		actionsRow = []
+		for action in actionsRaw:
+			pos = action.get('pos')
+			del action['pos']
+			if pos == 2:
+				actionsRow.append(action)
+			else:
+				actions.append(action)
 		# Update headers
 		if len(actions) > 0:
 			headers.append({ "key": "overflow", "empty": True })
@@ -75,6 +90,7 @@ class MtDynamic:
 			"headers": headers,
 			"rows": rows,
 			"actions": actions,
+			"actionsRow": actionsRow,
 		}
 	def getInfoPage(self, id, code, args):
 		page = self.db.getInfo(id, code)
@@ -272,7 +288,7 @@ class MtDynamicDB:
 		return MtDynamicUtils.buildMenuTree(menus)
 
 	def getList(self, id, code):
-		sql = "SELECT id, code, name, query, hasBack FROM list WHERE "
+		sql = "SELECT id, code, name, query, process, hasBack, l.'select' FROM list l WHERE "
 		if id is None:
 			sql += "code = ?"
 			params = [code]

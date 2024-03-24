@@ -1,10 +1,9 @@
-import os
-from dotenv import load_dotenv
+import re
 
-load_dotenv()
+dataType = 'TEXT(64)'
 
-STATIC_SERVER = os.getenv('STATIC_SERVER')
-FILE_SERVER = os.getenv('FILE_SERVER')
 
-print(STATIC_SERVER)
-print(FILE_SERVER)
+
+
+print(length)
+# return [var[1:-1] for var in lstVar] # Bỏ dấu {} ở dầu và cuối
