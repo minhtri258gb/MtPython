@@ -1,4 +1,5 @@
 import os
+from io import StringIO
 import sqlite3
 from flask import request, jsonify, send_file, make_response
 from pydub import AudioSegment
@@ -52,6 +53,10 @@ class MtMusic:
 		@self.mt.app.route("/music/cut", methods=['POST'])
 		def api_music_cut():
 			return self.api_cut()
+
+		@self.mt.app.route("/music/listSync", methods=['POST'])
+		def api_music_list_sync():
+			return self.api_list_sync()
 
 	def api_getListMusic(self):
 
@@ -336,3 +341,31 @@ class MtMusic:
 		for idx, col in enumerate(cursor.description):
 			d[col[0]] = row[idx]
 		return d
+
+	def api_list_sync(self):
+		try:
+			# Lấy tất cả từ thư mục
+			listItems = os.listdir(MtConfig.dir_music)
+
+			# Lấy các file mp3
+			listFileMusic = []
+			for item in listItems:
+				if (item[-4:] == '.mp3'):
+					listFileMusic.append(item[0:-4])
+			
+			# Viết lên file stream
+			content = StringIO()
+			for name in listFileMusic:
+				content.write(name + '\n')
+			
+			# Response
+			res = make_response(content.getvalue())
+			res.headers.set('Content-Type', 'text/plain')
+			res.headers.set('Content-Disposition', 'attachment', name='listMusic.txt')
+			res.status = 200
+			return res
+
+		except Exception as e:
+			print(type(e), e)
+			return jsonify("Error"), 300
+

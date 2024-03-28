@@ -1,9 +1,13 @@
-import re
+import os
+import unicodedata
 
-dataType = 'TEXT(64)'
+path = "D:/musics"
+dir_list = os.listdir(path)
 
+files = [unicodedata.normalize('NFC', f) for f in dir_list]
 
-
-
-print(length)
-# return [var[1:-1] for var in lstVar] # Bỏ dấu {} ở dầu và cuối
+# File Write
+mFile = open("./output.txt", 'w', encoding='utf-8')
+for f in files:
+	mFile.write(f + '\n')
+mFile.close()
