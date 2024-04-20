@@ -1,10 +1,23 @@
+
+
+
+
+
+
+
+### Calendar
+GET http://localhost/calendar/get?type=month&month=4
+
+
+
+### graphql
 POST http://localhost/graphql
 Content-Type: application/json
 # Authorization: Bearer xxx
 X-REQUEST-TYPE: GraphQL
 
 query MyQuery {
-  hello ## Placeholder value
+	hello ## Placeholder value
 }
 
 
@@ -23,6 +36,6 @@ POST http://localhost/dynamic/info/MGR_LIST HTTP/1.1
 Content-Type: application/json
 
 {
-  "code": "MGR_LIST"
+	"code": "MGR_LIST"
 }
 

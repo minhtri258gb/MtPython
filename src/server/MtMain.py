@@ -32,7 +32,6 @@ class Main:
 		isStaticServer = os.getenv('SERVER_STATIC')
 		if isStaticServer == '1':
 			staticPath = os.getenv('DIR_STATIC')
-			print(staticPath)
 			self.app = Flask(__name__, static_url_path = '', static_folder=staticPath)
 		else:
 			self.app = Flask(__name__)
