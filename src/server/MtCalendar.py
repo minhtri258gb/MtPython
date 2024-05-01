@@ -1,6 +1,7 @@
 import sqlite3
 from flask import request, jsonify
-from datetime import date
+import datetime
+import traceback
 # import math
 import MtSystem
 
@@ -9,49 +10,140 @@ class MtCalendar:
 	
 	mt = None
 	dbMgrPath = './res/database/manager.sqlite'
+	dbCldPath = './res/database/calendar.sqlite'
 
 	def __init__(self, _mt):
 		self.mt = _mt
 
 	def register(self):
-		@self.mt.app.route("/calendar/get")
+
+		@self.mt.app.route("/api/calendar/get")
 		def api_calendar_get():
 			return self.api_get()
+		
+		@self.mt.app.route("/api/calendar/gen", methods=['POST'])
+		def api_calendar_gen():
+			return self.api_gen()
 
 	def api_get(self):
-		rows = []
-		p_type = request.args.get('type')
-		print(p_type)
-		if p_type == 'month':
-			p_month = request.args.get('month')
-			
-			month = int(p_month)
-			curDate = date.today()
-			curYear = curDate.year
 
-			lunarDateB = MtLunar.Solar2Lunar(1, month, curYear)
-			lunarDateE = MtLunar.Solar2Lunar(MtSolar.getMaxDayOfMonth(month, curYear), month, curYear)
+		# Get Params
+		p_type = request.args.get('type')
+		p_year = int(request.args.get('year'))
+		p_month = int(request.args.get('month'))
+
+		rows = []
+		if p_type == 'month':
+
+			# Lịch hiển thị dư các ngày của tháng trước và tháng sau, tìm các ngày đó
+			bMonthDate = datetime.date(p_year, p_month, 1)
+			eMonthDate = datetime.date(p_year, p_month, MtSolar.getMaxDayOfMonth(p_month, p_year))
+			bDeltaDay = MtSolar.getDayInWeek(bMonthDate)
+			eDeltaDay = 6 - MtSolar.getDayInWeek(eMonthDate)
+			bDayCalendar = bMonthDate - datetime.timedelta(days=bDeltaDay) # Ngày đầu lịch
+			eDayCalendar = eMonthDate + datetime.timedelta(days=eDeltaDay) # Ngày cuối lịch
 
 			# Build SQL
-			monthStr = p_month
-			if len(monthStr) == 1:
-				monthStr = '0' + monthStr
-			sql = "SELECT * FROM date_event WHERE is_lunar = 0 AND date LIKE '__{0}'".format(monthStr)
-			sql += " OR is_lunar = 1 AND ("
-			for i in range(lunarDateB[1], lunarDateE[1]+1):
-				monthStr = str(i)
-				if len(monthStr) == 1:
-					monthStr = '0' + monthStr
-				sql += "date LIKE '__{0}' OR ".format(monthStr)
-			sql = sql[0:-4] + ")"
+			sql = "SELECT * FROM calendar WHERE (year = ? AND month = ?)"
+			param = [p_year, p_month]
 
-			param = []
-			conn = sqlite3.connect(self.dbMgrPath)
+			if bDeltaDay > 0:
+				sql += " OR (year = ? AND month = ? AND day >= ?)"
+				param.extend([bDayCalendar.year, bDayCalendar.month, bDayCalendar.day])
+
+			if eDeltaDay > 0:
+				sql += " OR (year = ? AND month = ? AND day <= ?)"
+				param.extend([eDayCalendar.year, eDayCalendar.month, eDayCalendar.day])
+
+			# Query
+			conn = sqlite3.connect(self.dbCldPath)
 			conn.row_factory = MtSystem.sql_dict_factory
 			rows = conn.execute(sql, param).fetchall()
 			conn.close()
 		
 		return jsonify(rows), 200
+
+	def api_gen(self):
+		result_code = 200
+		result = {}
+		try:
+			# lấy params
+			year = request.args.get('year')
+			if year is None:
+				raise Exception("Chưa truyền năm để gen (year)")
+			year = int(year)
+			
+			# print(year)
+			# print(type(year))
+
+			# Mở kết nối
+			conn = sqlite3.connect(self.dbCldPath)
+			conn.row_factory = MtSystem.sql_dict_factory
+
+			# Kiểm tra đã gen năm này chưa
+			sql = "SELECT count(1) AS 'count' FROM calendar c WHERE c.'year' = ?;"
+			params = [year]
+			res = conn.execute(sql, params).fetchall()
+			if res[0]['count'] > 0:
+				result['msg'] = "Đã tạo sự kiện cho năm {0}".format(year)
+			else:
+				# Lấy danh sách event để gen
+				sql = """
+					SELECT * FROM event_loop
+					"""
+				param = []
+				lstCld = conn.execute(sql, param).fetchall()
+				
+				# Tách lịch âm / dương
+				lstSolar = []
+				for cld in lstCld:
+					if cld['is_lunar'] == 1:
+						day = cld['day']
+						month = cld['month']
+						solarDate = MtLunar.Lunar2Solar(day, month, year, False)
+						if solarDate[0] == year: # nếu thuộc năm nay
+							cld['month'] = solarDate[1]
+							cld['day'] = solarDate[2]
+							lstSolar.append(cld)
+						
+						# Sự kiện âm lịch Cuối năm trước
+						if cld['month'] == 12:
+							solarDate = MtLunar.Lunar2Solar(day, month, year-1, False)
+							if solarDate[0] == year: # nếu thuộc năm nay
+								cld['month'] = solarDate[1]
+								cld['day'] = solarDate[2]
+								lstSolar.append(cld)
+					else:
+						lstSolar.append(cld)
+					del cld['is_lunar']
+
+				# Insert into table calender
+				sql = """
+					INSERT INTO calendar(name,day,month,year,tag,origin)
+					VALUES(?,?,?,?,?,?)
+					"""
+				for cld in lstSolar:
+					params = [
+						cld['name'],
+						cld['day'],
+						cld['month'],
+						year,
+						cld['tag'],
+						'LOOP'
+					]
+					conn.execute(sql, params)
+					conn.commit()
+					
+				result['msg'] = "Thêm thành công {0} sự kiện cho năm {1}".format(len(lstSolar), year)
+			conn.close()
+		except Exception as e:
+			traceback.print_exc()
+			result['msg'] = str(e)
+			result_code = 500
+		return jsonify(result), result_code
+
+	def getAllRawEvent(self):
+		pass
 
 
 class MtSolar:
@@ -69,6 +161,9 @@ class MtSolar:
 
 	def isLeapYear(y):
 		return ((y % 400 == 0) or (y % 100 != 0) and (y % 4 == 0))
+
+	def getDayInWeek(date):
+		return (date.weekday()) % 7 # Start is Monday
 
 
 class MtLunar:

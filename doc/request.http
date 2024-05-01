@@ -5,9 +5,12 @@
 
 
 
-### Calendar
-GET http://localhost/calendar/get?type=month&month=4
+### Calendar Get
+GET http://localhost/api/calendar/get?type=month&year=2024&month=5
 
+
+### Calendar Gen
+POST http://localhost/api/calendar/gen?year=2024
 
 
 ### graphql
