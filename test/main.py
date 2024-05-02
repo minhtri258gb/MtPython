@@ -1,13 +1,20 @@
-import os
-import unicodedata
+import ffmpeg
 
-path = "D:/musics"
-dir_list = os.listdir(path)
+# # Convert format
+# ffmpeg.input("input.mp4").output("output.wmv").run()
 
-files = [unicodedata.normalize('NFC', f) for f in dir_list]
+# # Extrac sound from video
+# ffmpeg.input("input.mp4").output('audio.mp3').run()
 
-# File Write
-mFile = open("./output.txt", 'w', encoding='utf-8')
-for f in files:
-	mFile.write(f + '\n')
-mFile.close()
+# # Cut media
+# start_time = '00:00:10' # Start time for trimming (HH:MM:SS)
+# end_time = '00:00:20' # End time for trimming (HH:MM:SS)
+# ffmpeg.input("input.mp4", ss=start_time, to=end_time).output("trimmed_output.mp4").run()
+
+# # Get image from video
+# ffmpeg.input("input.mp4").output('frame_%d.png', vframes=3).run()
+
+# Normal decibel
+ffmpeg.input("input.mp3").filter('loudnorm').output("output.mp3")
+# ffmpeg -i input.wav -filter:a loudnorm output.wav
+# ffmpeg -i origin.mp3 -filter:a loudnorm ffmpeg_cmd.mp3

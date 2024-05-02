@@ -8,6 +8,8 @@ pip install requests
 pip install gspread
 pip install oauth2client
 pip install cryptography
+pip install ffmpeg-python
+pip install ffmpeg-normalize
 - Image
 	- pip install Image
 

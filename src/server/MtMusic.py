@@ -336,12 +336,6 @@ class MtMusic:
 			print(type(e), e)
 			return jsonify("Error"), 300
 
-	def cbk_dict_factory(cursor, row):
-		d = {}
-		for idx, col in enumerate(cursor.description):
-			d[col[0]] = row[idx]
-		return d
-
 	def api_list_sync(self):
 		try:
 			# Lấy tất cả từ thư mục

@@ -5,7 +5,6 @@ import traceback
 # import math
 import MtSystem
 
-
 class MtCalendar:
 	
 	mt = None
@@ -28,38 +27,42 @@ class MtCalendar:
 	def api_get(self):
 
 		# Get Params
-		p_type = request.args.get('type')
-		p_year = int(request.args.get('year'))
-		p_month = int(request.args.get('month'))
+		p_start = request.args.get('start')
+		p_end = request.args.get('end')
 
-		rows = []
-		if p_type == 'month':
+		# Lịch hiển thị dư các ngày của tháng trước và tháng sau, tìm các ngày đó
+		# bMonthDate = datetime.date(p_year, p_month, 1)
+		# eMonthDate = datetime.date(p_year, p_month, MtSolar.getMaxDayOfMonth(p_month, p_year))
+		# bDeltaDay = MtSolar.getDayInWeek(bMonthDate)
+		# eDeltaDay = 6 - MtSolar.getDayInWeek(eMonthDate)
+		# bDayCalendar = bMonthDate - datetime.timedelta(days=bDeltaDay) # Ngày đầu lịch
+		# eDayCalendar = eMonthDate + datetime.timedelta(days=eDeltaDay) # Ngày cuối lịch
+		bDayCalendar = datetime.datetime.strptime(p_start, '%d/%m/%Y')
+		eDayCalendar = datetime.datetime.strptime(p_end, '%d/%m/%Y')
 
-			# Lịch hiển thị dư các ngày của tháng trước và tháng sau, tìm các ngày đó
-			bMonthDate = datetime.date(p_year, p_month, 1)
-			eMonthDate = datetime.date(p_year, p_month, MtSolar.getMaxDayOfMonth(p_month, p_year))
-			bDeltaDay = MtSolar.getDayInWeek(bMonthDate)
-			eDeltaDay = 6 - MtSolar.getDayInWeek(eMonthDate)
-			bDayCalendar = bMonthDate - datetime.timedelta(days=bDeltaDay) # Ngày đầu lịch
-			eDayCalendar = eMonthDate + datetime.timedelta(days=eDeltaDay) # Ngày cuối lịch
+		# Build SQL
+		# sql = "SELECT * FROM calendar WHERE (year = ? AND month = ?)"
+		# param = [p_year, p_month]
 
-			# Build SQL
-			sql = "SELECT * FROM calendar WHERE (year = ? AND month = ?)"
-			param = [p_year, p_month]
+		# if bDeltaDay > 0:
+		# 	sql += " OR (year = ? AND month = ? AND day >= ?)"
+		# 	param.extend([bDayCalendar.year, bDayCalendar.month, bDayCalendar.day])
 
-			if bDeltaDay > 0:
-				sql += " OR (year = ? AND month = ? AND day >= ?)"
-				param.extend([bDayCalendar.year, bDayCalendar.month, bDayCalendar.day])
+		# if eDeltaDay > 0:
+		# 	sql += " OR (year = ? AND month = ? AND day <= ?)"
+		# 	param.extend([eDayCalendar.year, eDayCalendar.month, eDayCalendar.day])
 
-			if eDeltaDay > 0:
-				sql += " OR (year = ? AND month = ? AND day <= ?)"
-				param.extend([eDayCalendar.year, eDayCalendar.month, eDayCalendar.day])
+		sql = "SELECT * FROM calendar WHERE year*10000+month*100+day >= ? AND year*10000+month*100+day <= ?"
+		param = [
+			bDayCalendar.year*10000+bDayCalendar.month*100+bDayCalendar.day,
+			eDayCalendar.year*10000+eDayCalendar.month*100+eDayCalendar.day
+		]
 
-			# Query
-			conn = sqlite3.connect(self.dbCldPath)
-			conn.row_factory = MtSystem.sql_dict_factory
-			rows = conn.execute(sql, param).fetchall()
-			conn.close()
+		# Query
+		conn = sqlite3.connect(self.dbCldPath)
+		conn.row_factory = MtSystem.sql_dict_factory
+		rows = conn.execute(sql, param).fetchall()
+		conn.close()
 		
 		return jsonify(rows), 200
 
