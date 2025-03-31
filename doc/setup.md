@@ -1,6 +1,7 @@
 
 # Library
 pip install flask
+pip install flask_swagger
 pip install -U flask-cors
 pip install pydub
 pip install pystray

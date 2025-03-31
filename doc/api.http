@@ -1,0 +1,65 @@
+
+@host = http://localhost
+
+
+### @name File_List
+GET {{host}}/file/list?folder=C:\Users\Windows\Downloads
+
+
+
+### @name File_Read
+GET {{host}}/file/read?file=C:\Users\Windows\Downloads\samples_CComfyUI_00001_.png
+
+
+
+### @name File_Write
+POST {{host}}/file/write?folder=C:\Users\Windows\Downloads\test
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="music_202406262017.csv"
+Content-Type: text/csv
+
+< C:\Users\Windows\Downloads\music_202406262017.csv
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+
+
+### @name Calendar_Get
+GET {{host}}/api/calendar/get?type=month&year=2024&month=5
+
+
+
+### Calendar Gen
+POST http://localhost/api/calendar/gen?year=2024
+
+
+### graphql
+POST http://localhost/graphql
+Content-Type: application/json
+# Authorization: Bearer xxx
+X-REQUEST-TYPE: GraphQL
+
+query MyQuery {
+	hello ## Placeholder value
+}
+
+
+
+### Dynamic list
+POST http://localhost/dynamic/list/MGR_LIST HTTP/1.1
+Content-Type: application/json
+
+{
+}
+
+
+
+### Dynamic info
+POST http://localhost/dynamic/info/MGR_LIST HTTP/1.1
+Content-Type: application/json
+
+{
+	"code": "MGR_LIST"
+}
+

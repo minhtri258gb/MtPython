@@ -2,7 +2,7 @@ import os
 from io import StringIO
 import sqlite3
 from flask import request, jsonify, send_file, make_response
-from pydub import AudioSegment
+# from pydub import AudioSegment
 import MtConfig
 import MtSystem
 
@@ -33,7 +33,7 @@ class MtMusic:
 		@self.mt.app.route("/music/refresh", methods=['POST'])
 		def api_music_refresh():
 			return self.api_refresh()
-		
+
 		@self.mt.app.route("/music/add", methods=['POST'])
 		def api_music_add():
 			return self.api_add()
@@ -45,14 +45,14 @@ class MtMusic:
 		@self.mt.app.route("/music/edit", methods=['POST'])
 		def api_music_edit():
 			return self.api_edit()
-		
+
 		@self.mt.app.route("/music/remove", methods=['DELETE'])
 		def api_music_remove():
 			return self.api_remove()
-		
-		@self.mt.app.route("/music/cut", methods=['POST'])
-		def api_music_cut():
-			return self.api_cut()
+
+		# @self.mt.app.route("/music/cut", methods=['POST'])
+		# def api_music_cut():
+		# 	return self.api_cut()
 
 		@self.mt.app.route("/music/listSync", methods=['POST'])
 		def api_music_list_sync():
@@ -80,7 +80,7 @@ class MtMusic:
 		if include != None:
 			for text in include:
 				sql += " AND (','||tags||',') LIKE '%,"+text+",%'"
-		
+
 		# Filter exclude
 		exclude = request.form.getlist("exclude[]")
 		if exclude != None:
@@ -130,7 +130,7 @@ class MtMusic:
 		# if MtConfig.cloud_db_music: # Get list from cloud sheet
 		# 	lstDBFileName = self.mt.cloud.getCols(self.cloudId, 2) # name
 		# else:                       # Get list from local database
-		
+
 		# Read database
 		conn = sqlite3.connect(self.dbPath)
 		cursor = conn.execute("SELECT name FROM music WHERE miss = 0")
@@ -143,10 +143,10 @@ class MtMusic:
 		lstNewMusic = [{"name":name} for name in listFileMusic if name not in listFileName]
 		if len(lstNewMusic) == 0:
 			lstNewMusic.append({"name":'empty'})
-		
+
 		return jsonify(lstNewMusic), 200
 
-	def api_add(self): 
+	def api_add(self):
 		# Authorize
 		if not MtSystem.auth_check(request.form.get('token')):
 			return "Access denied", 403
@@ -180,7 +180,7 @@ class MtMusic:
 		return jsonify("Success"), 200
 
 	def api_add_all(self):
-		
+
 		if not MtSystem.auth_check(request.form.get('token')):
 			return "Access denied", 403
 
@@ -213,7 +213,7 @@ class MtMusic:
 		return jsonify("Success"), 200
 
 	def api_edit(self):
-		
+
 		# Authorize
 		if not MtSystem.auth_check(request.form.get('token')):
 			return "Access denied", 403
@@ -235,14 +235,14 @@ class MtMusic:
 		tags = request.form.get('tags')
 		if (isinstance(tags, str)):
 			tags = tags.upper()
-		
+
 		trackbegin = request.form.get('trackbegin')
 		trackend = request.form.get('trackend')
 		if len(trackbegin) == 0:
 			trackbegin = None
 		if len(trackend) == 0:
 			trackend = None
-		
+
 		# Update data
 		music.update({'name': request.form.get('name')})
 		music.update({'duration': request.form.get('duration')})
@@ -251,7 +251,7 @@ class MtMusic:
 		music.update({'rate': request.form.get('rate')})
 		music.update({'trackbegin': trackbegin})
 		music.update({'trackend': trackend})
-		
+
 		conn.execute('''
 			UPDATE music
 			SET name = ?,
@@ -281,60 +281,60 @@ class MtMusic:
 		# Authorize
 		if not MtSystem.auth_check(request.form.get('token')):
 			return "Access denied", 403
-			
+
 		id = request.form.get('id')
 		conn = sqlite3.connect(self.dbPath)
 		conn.execute("UPDATE music SET miss = 1 WHERE id = ?", [id])
 		conn.commit()
 		conn.close()
 		return jsonify("Success"), 200
-	
-	def api_cut(self):
-		# Authorize
-		if not MtSystem.auth_check(request.form.get('token')):
-			return "Access denied", 403
 
-		# Get param
-		id = request.form.get('id')
-		trackbegin = request.form.get('trackbegin')
-		trackend = request.form.get('trackend')
-		if trackbegin == None or trackend == None:
-			return jsonify("Thiếu thông tin track"), 300
-		trackbegin = float(trackbegin)
-		trackend = float(trackend)
+	# def api_cut(self):
+	# 	# Authorize
+	# 	if not MtSystem.auth_check(request.form.get('token')):
+	# 		return "Access denied", 403
 
-		# Get from DB
-		conn = sqlite3.connect(self.dbPath)
-		conn.row_factory = MtSystem.sql_dict_factory
-		cursor = conn.execute("SELECT * FROM music WHERE id = ?", [id])
-		music = cursor.fetchone()
-		conn.close()
+	# 	# Get param
+	# 	id = request.form.get('id')
+	# 	trackbegin = request.form.get('trackbegin')
+	# 	trackend = request.form.get('trackend')
+	# 	if trackbegin == None or trackend == None:
+	# 		return jsonify("Thiếu thông tin track"), 300
+	# 	trackbegin = float(trackbegin)
+	# 	trackend = float(trackend)
 
-		try:
-			filepath = MtConfig.dir_music + music.get('name') + '.mp3'
-			musicFile = AudioSegment.from_mp3(filepath)
+	# 	# Get from DB
+	# 	conn = sqlite3.connect(self.dbPath)
+	# 	conn.row_factory = MtSystem.sql_dict_factory
+	# 	cursor = conn.execute("SELECT * FROM music WHERE id = ?", [id])
+	# 	music = cursor.fetchone()
+	# 	conn.close()
 
-			trackFile = musicFile[trackbegin * 1000 : trackend * 1000]
-			trackpath = MtConfig.tmp_path + 'track.mp3'
-			if os.path.exists(trackpath):
-				os.remove(trackpath)
-			trackFile.export(trackpath, format='mp3')
+	# 	try:
+	# 		filepath = MtConfig.dir_music + music.get('name') + '.mp3'
+	# 		musicFile = AudioSegment.from_mp3(filepath)
 
-			contentBin = None
-			with open(trackpath, 'rb') as file:
-				contentBin = file.read()
+	# 		trackFile = musicFile[trackbegin * 1000 : trackend * 1000]
+	# 		trackpath = MtConfig.tmp_path + 'track.mp3'
+	# 		if os.path.exists(trackpath):
+	# 			os.remove(trackpath)
+	# 		trackFile.export(trackpath, format='mp3')
 
-			os.remove(trackpath)
+	# 		contentBin = None
+	# 		with open(trackpath, 'rb') as file:
+	# 			contentBin = file.read()
 
-			res = make_response(contentBin)
-			res.headers.set('Content-Type', 'audio/mp3')
-			res.headers.set('Content-Disposition', 'attachment', name='%s (track).mp3' % music.get('name'))
-			res.status = 200
-			return res
-		
-		except Exception as e:
-			print(type(e), e)
-			return jsonify("Error"), 300
+	# 		os.remove(trackpath)
+
+	# 		res = make_response(contentBin)
+	# 		res.headers.set('Content-Type', 'audio/mp3')
+	# 		res.headers.set('Content-Disposition', 'attachment', name='%s (track).mp3' % music.get('name'))
+	# 		res.status = 200
+	# 		return res
+
+	# 	except Exception as e:
+	# 		print(type(e), e)
+	# 		return jsonify("Error"), 300
 
 	def api_list_sync(self):
 		try:
@@ -346,12 +346,12 @@ class MtMusic:
 			for item in listItems:
 				if (item[-4:] == '.mp3'):
 					listFileMusic.append(item[0:-4])
-			
+
 			# Viết lên file stream
 			content = StringIO()
 			for name in listFileMusic:
 				content.write(name + '\n')
-			
+
 			# Response
 			res = make_response(content.getvalue())
 			res.headers.set('Content-Type', 'text/plain')

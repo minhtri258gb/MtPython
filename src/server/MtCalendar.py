@@ -6,7 +6,8 @@ import traceback
 import MtSystem
 
 class MtCalendar:
-	
+
+	h_debug = False
 	mt = None
 	dbMgrPath = './res/database/manager.sqlite'
 	dbCldPath = './res/database/calendar.sqlite'
@@ -23,6 +24,11 @@ class MtCalendar:
 		@self.mt.app.route("/api/calendar/gen", methods=['POST'])
 		def api_calendar_gen():
 			return self.api_gen()
+
+		# Log
+		if self.h_debug:
+			print("[MtCalendar] register")
+
 
 	def api_get(self):
 
@@ -65,7 +71,7 @@ class MtCalendar:
 		conn.close()
 		
 		return jsonify(rows), 200
-
+		
 	def api_gen(self):
 		result_code = 200
 		result = {}
@@ -76,9 +82,6 @@ class MtCalendar:
 				raise Exception("Chưa truyền năm để gen (year)")
 			year = int(year)
 			
-			# print(year)
-			# print(type(year))
-
 			# Mở kết nối
 			conn = sqlite3.connect(self.dbCldPath)
 			conn.row_factory = MtSystem.sql_dict_factory
@@ -91,9 +94,7 @@ class MtCalendar:
 				result['msg'] = "Đã tạo sự kiện cho năm {0}".format(year)
 			else:
 				# Lấy danh sách event để gen
-				sql = """
-					SELECT * FROM event_loop
-					"""
+				sql = "SELECT * FROM event_loop"
 				param = []
 				lstCld = conn.execute(sql, param).fetchall()
 				

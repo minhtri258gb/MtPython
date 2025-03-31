@@ -1,5 +1,5 @@
-from PIL import Image
-from io import BytesIO
+# from PIL import Image
+# from io import BytesIO
 
 class MtImage:
 	
@@ -22,10 +22,10 @@ class MtImage:
 		
 		pass
 	
-	def covPNG2JPG(self): # convert png to jpg
-		ima = Image.open("img.png")
-		with BytesIO() as f:
-			ima.save(f, format='JPEG')
-			f.seek(0)
-			ima_jpg = Image.open(f)
+	# def covPNG2JPG(self): # convert png to jpg
+	# 	ima = Image.open("img.png")
+	# 	with BytesIO() as f:
+	# 		ima.save(f, format='JPEG')
+	# 		f.seek(0)
+	# 		ima_jpg = Image.open(f)
 

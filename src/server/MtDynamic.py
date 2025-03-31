@@ -1,17 +1,23 @@
+import os
 import sqlite3
-from flask import request, jsonify
+import flask
 import traceback
 import MtSystem
 import MtUtils
 
 class MtDynamic:
-	
+
 	mt = None
 
 	def __init__(self, _mt):
 		self.mt = _mt
 		self.db = MtDynamicDB()
+	
 	def register(self):
+
+		@self.mt.app.route("/dynamic/page", methods=['GET'])
+		def _viewPage():
+			return self.viewPage()
 
 		@self.mt.app.route("/api/dynamic/getPage", methods=['POST'])
 		def _apigetPage():
@@ -20,9 +26,13 @@ class MtDynamic:
 		@self.mt.app.route("/api/dynamic/saveInfo", methods=['POST'])
 		def _apiSaveInfo():
 			return self.apiSaveInfo()
-
+	
+	def viewPage(self):
+		staticPath = os.getenv('DIR_STATIC')
+		return flask.send_from_directory(staticPath, path="dynamic/index.html")
+	
 	def apiGetPage(self):
-		args = request.get_json()
+		args = flask.request.get_json()
 		self.db.on()
 		self.db.returnType('LST_DIC')
 		try:
@@ -50,7 +60,8 @@ class MtDynamic:
 			result = { 'message': errMsg }
 			result_code = 500
 		self.db.off()
-		return jsonify(result), result_code
+		return flask.jsonify(result), result_code
+	
 	def getListPage(self, id, code, args):
 		# Page
 		page = self.db.getList(id, code)
@@ -64,9 +75,9 @@ class MtDynamic:
 		headers.insert(0, { "key": "stt", "value": "STT" })
 		# Rows
 		rows = self.db.getListRow(listQuery, args)
-		if 'process' in  page:
-			print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", page['process'])
-			pass
+		# if 'process' in page:
+		# 	print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", page['process'])
+		# 	pass
 		for i, row in enumerate(rows):
 			row['stt'] = i+1
 		# Actions
@@ -92,6 +103,7 @@ class MtDynamic:
 			"actions": actions,
 			"actionsRow": actionsRow,
 		}
+	
 	def getInfoPage(self, id, code, args):
 		page = self.db.getInfo(id, code)
 		if id is None:
@@ -119,6 +131,7 @@ class MtDynamic:
 			'actions': actions,
 			'contents': contentsData,
 		}
+	
 	def getTabPage(self, id, code, args):
 		page = self.db.getTab(id, code)
 		if id is None:
@@ -129,6 +142,7 @@ class MtDynamic:
 			'page': page,
 			'tabs': tabs,
 		}
+	
 	def loadFirstTab(self, tab, args):
 		pageType = tab['pageType']
 		pageId = tab['pageId']
@@ -143,6 +157,7 @@ class MtDynamic:
 			tab.update(res)
 			tab['isLoaded'] = True
 		return tab
+	
 	def loadContentData(self, contents, form, fields):
 		
 		# Process Extra
@@ -215,12 +230,12 @@ class MtDynamic:
 
 		# Return contents and update fields
 		return result, fields
-
+	
 	def apiSaveInfo(self):
 		
 		#TODO Check authenticate
 
-		args = request.get_json()
+		args = flask.request.get_json()
 		
 		self.db.on()
 		self.db.returnType('LST_DIC')
@@ -245,7 +260,8 @@ class MtDynamic:
 			result_code = 500
 		self.db.off()
 
-		return jsonify(result), result_code
+		return flask.jsonify(result), result_code
+
 
 class MtDynamicDB:
 
@@ -470,6 +486,7 @@ class MtDynamicDB:
 		return self.query(sql, params)
 
 	# def getContent2(self, lstContentCode, fields, form):
+
 
 class MtDynamicUtils:
 	def buildMenuTree(menus):
