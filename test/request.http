@@ -1,4 +1,14 @@
 
+### Server Status - check
+
+GET http://localhost/network/check HTTP/1.1
+Content-Type: application/json
+
+{
+	"view": "month",
+	"month": 4
+}
+
 ### Music get list sync
 POST http://localhost/music/listSync HTTP/1.1
 

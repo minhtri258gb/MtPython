@@ -1,5 +1,27 @@
 
-@host = http://localhost
+@host = http://localhost:258
+
+
+
+### @name authorize
+POST {{host}}/authorize
+Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+
+{ "password": "-1393153393" }
+
+
+
+### @name admin_consoleToogle
+POST {{host}}/admin/consoleToogle
+Content-Type: application/json
+
+{ "toogle": false }
+
+
+
+### @name common_getIPLocal
+GET {{host}}/common/getIPLocal
+
 
 
 ### @name File_List
@@ -30,36 +52,36 @@ GET {{host}}/api/calendar/get?type=month&year=2024&month=5
 
 
 
-### Calendar Gen
-POST http://localhost/api/calendar/gen?year=2024
+### @name Calendar_Gen
+POST {{host}}/api/calendar/gen?year=2024
 
 
-### graphql
-POST http://localhost/graphql
+
+### @name Dynamic_info
+POST {{host}}/dynamic/info/MGR_LIST HTTP/1.1
+Content-Type: application/json
+
+{
+	"code": "MGR_LIST"
+}
+
+
+
+### @name Dynamic_list
+POST {{host}}/dynamic/list/MGR_LIST HTTP/1.1
+Content-Type: application/json
+
+{ }
+
+
+
+### @name graphql
+POST {{host}}/graphql
 Content-Type: application/json
 # Authorization: Bearer xxx
 X-REQUEST-TYPE: GraphQL
 
 query MyQuery {
 	hello ## Placeholder value
-}
-
-
-
-### Dynamic list
-POST http://localhost/dynamic/list/MGR_LIST HTTP/1.1
-Content-Type: application/json
-
-{
-}
-
-
-
-### Dynamic info
-POST http://localhost/dynamic/info/MGR_LIST HTTP/1.1
-Content-Type: application/json
-
-{
-	"code": "MGR_LIST"
 }
 

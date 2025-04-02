@@ -30,3 +30,13 @@ def crypt_encode(data):
 def crypt_decode(data):
 	global crypt
 	return crypt.decrypt(data)
+
+# Console
+def console_toogle(toogle):
+	import win32gui, win32con, win32console
+	hwnd = win32console.GetConsoleWindow()
+	if toogle:
+		win32gui.ShowWindow(hwnd, win32con.SW_SHOW)
+	else:
+		win32gui.ShowWindow(hwnd, win32con.SW_HIDE)
+	pass

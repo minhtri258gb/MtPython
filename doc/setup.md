@@ -1,14 +1,15 @@
 
 # Library
 pip install flask
-pip install flask_swagger
+pip install flask-swagger
 pip install -U flask-cors
+pip install python-dotenv
 pip install pydub
-pip install pystray
-pip install requests
 pip install gspread
 pip install oauth2client
 pip install cryptography
+pip install pystray
+pip install requests
 pip install ffmpeg-python
 pip install ffmpeg-normalize
 - Image

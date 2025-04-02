@@ -19,7 +19,7 @@ class MtCore:
 	def register(self):
 
 		statis_path = os.getenv('DIR_STATIC')
-		
+
 		@self.mt.app.route('/')
 		def api_home_page():
 			return send_from_directory(statis_path, path="./home/index.html")
@@ -35,7 +35,7 @@ class MtCore:
 				fullpath = statis_path + appName
 				if (os.path.exists(fullpath) and os.path.isdir(fullpath)):
 					return send_from_directory(statis_path, path=appName+"/index.html")
-				
+
 			except Exception as e:
 				print(type(e), e)
 				return "App not found"
@@ -51,11 +51,22 @@ class MtCore:
 				token = token_b64.decode('ascii') # To String
 				MtSystem.auth_set(token)
 			return jsonify({"result": result, "token": token}), 200
-		
+
 		@self.mt.app.route("/docs")
 		def api_doc_page():
 			return jsonify(swagger(self.mt.app)), 200
-		
+
+		@self.mt.app.route("/admin/consoleToogle", methods=['POST'])
+		def api_admin_consoleToogle():
+			try:
+				json_data = request.get_json()
+				MtSystem.console_toogle(json_data.get('toogle'))
+				return jsonify("Success"), 200
+			except Exception as e:
+				return jsonify(e.description), 300
+			except:
+				return jsonify("Error"), 300
+
 		@self.mt.app.route('/common/getListApplication')
 		def api_common_get_list_application():
 			return jsonify(MtConfig.list_app), 200
@@ -68,5 +79,5 @@ class MtCore:
 
 	def getHost(self):
 		hostname = socket.gethostname()
-		return socket.gethostbyname(hostname)
-	
+		return hostname
+		# return socket.gethostbyname(hostname)

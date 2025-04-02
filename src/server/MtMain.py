@@ -36,8 +36,8 @@ class Main:
 		else:
 			self.app = Flask(__name__)
 
-		# Setup app Falsk
-		# self.app.json.ensure_ascii = False
+		# Setup app Flask
+		self.app.json.ensure_ascii = False
 
 		# Fix lỗi CORS
 		self.cors = CORS(self.app)

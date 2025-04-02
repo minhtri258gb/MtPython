@@ -14,5 +14,6 @@
       "group": "BackEnd",
       "database": "${workspaceFolder:MtPython}/res/database/manager.sqlite"
     }
-  ]
+  ],
+  "commentTranslate.hover.enabled": false
 }
