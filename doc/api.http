@@ -15,12 +15,20 @@ Content-Type: application/x-www-form-urlencoded; charset=UTF-8
 POST {{host}}/admin/consoleToogle
 Content-Type: application/json
 
-{ "toogle": false }
+{ "toogle": true }
 
 
 
 ### @name common_getIPLocal
 GET {{host}}/common/getIPLocal
+
+
+
+### @name music_refresh
+POST {{host}}/music/refresh
+Content-Type: application/json
+
+{ "token": "EliWMil3hLuA+WQPMumHTar75DFSgLPLdQ==" }
 
 
 

@@ -112,39 +112,45 @@ class MtMusic:
 			print(type(e), e)
 
 	def api_refresh(self):
-		# Authorize
-		if not MtSystem.auth_check(request.form.get('token')):
-			return "Access denied", 403
+		try:
 
-		# Lấy tất cả từ thư mục
-		listItems = os.listdir(MtConfig.dir_music)
+			# Authorize
+			token = request.form.get('token')
+			if not MtSystem.auth_check(token):
+				return "Access denied", 403
 
-		# Lấy các file mp3
-		listFileMusic = []
-		for item in listItems:
-			if (item[-4:] == '.mp3'):
-				listFileMusic.append(item[0:-4])
+			# Lấy tất cả từ thư mục
+			listItems = os.listdir(MtConfig.dir_music)
 
-		# Read database from cloud
-		# lstDBFileName = []
-		# if MtConfig.cloud_db_music: # Get list from cloud sheet
-		# 	lstDBFileName = self.mt.cloud.getCols(self.cloudId, 2) # name
-		# else:                       # Get list from local database
+			# Lấy các file mp3
+			listFileMusic = []
+			for item in listItems:
+				if (item[-4:] == '.mp3'):
+					listFileMusic.append(item[0:-4])
 
-		# Read database
-		conn = sqlite3.connect(self.dbPath)
-		cursor = conn.execute("SELECT name FROM music WHERE miss = 0")
-		listFileName = []
-		for row in cursor:
-			listFileName.append(row[0])
-		conn.close()
+			# Read database from cloud
+			# lstDBFileName = []
+			# if MtConfig.cloud_db_music: # Get list from cloud sheet
+			# 	lstDBFileName = self.mt.cloud.getCols(self.cloudId, 2) # name
+			# else:                       # Get list from local database
 
-		# Danh sach file nhạc mới
-		lstNewMusic = [{"name":name} for name in listFileMusic if name not in listFileName]
-		if len(lstNewMusic) == 0:
-			lstNewMusic.append({"name":'empty'})
+			# Read database
+			conn = sqlite3.connect(self.dbPath)
+			cursor = conn.execute("SELECT name FROM music WHERE miss = 0")
+			listFileName = []
+			for row in cursor:
+				listFileName.append(row[0])
+			conn.close()
 
-		return jsonify(lstNewMusic), 200
+			# Danh sach file nhạc mới
+			lstNewMusic = [{"name":name} for name in listFileMusic if name not in listFileName]
+			if len(lstNewMusic) == 0:
+				lstNewMusic.append({"name":'empty'})
+
+			return jsonify(lstNewMusic), 200
+
+		except Exception as e:
+			return "Lỗi: "+str(e), 500
 
 	def api_add(self):
 		# Authorize

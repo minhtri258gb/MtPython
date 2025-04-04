@@ -2,19 +2,19 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
-			"name": "File Debug",
-			"type": "debugpy",
-			"request": "launch",
-			"program": "python ${relativeFile} -debug",
-			"cwd": "${workspaceFolder}",
-			"console": "integratedTerminal"
-		},
-		{
 			"name": "Flask",
 			"type": "debugpy",
 			"request": "launch",
 			"program": "./src/server/MtMain.py",
 			"args": ["-debug"],
+			"cwd": "${workspaceFolder}",
+			"console": "integratedTerminal"
+		},
+		{
+			"name": "File Debug",
+			"type": "debugpy",
+			"request": "launch",
+			"program": "python ${relativeFile} -debug",
 			"cwd": "${workspaceFolder}",
 			"console": "integratedTerminal"
 		}
